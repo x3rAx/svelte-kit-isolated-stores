@@ -87,10 +87,10 @@ export function defineStore<T extends object>(fn: () => T): IsolatedStore<T> {
     }) as IsolatedStore<T>
 }
 
-export function defineWritable<T>(value?: T, start?: StartStopNotifier<T>): Writable<T> {
-    return defineStore(() => writable(value, start))
+export function defineWritable<T>(createValue?: ()=>T, start?: StartStopNotifier<T>): Writable<T> {
+    return defineStore(() => writable(createValue(), start))
 }
 
-export function defineReadable<T>(value?: T, start?: StartStopNotifier<T>): Readable<T> {
-    return defineStore(() => readable(value, start))
+export function defineReadable<T>(createValue?: ()=>T, start?: StartStopNotifier<T>): Readable<T> {
+    return defineStore(() => readable(createValue(), start))
 }
