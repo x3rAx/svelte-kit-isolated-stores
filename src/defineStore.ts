@@ -23,7 +23,6 @@ export function defineStore<T extends object>(fn: () => T): IsolatedStore<T> {
     return new Proxy(dummy, {
         // The main part: Redirect property getter to session store
         get(target, prop, receiver) {
-            console.log('GET', { prop, receiver })
             // Get stores for session
             const { sessionData } = useSession()
             const { stores } = sessionData
@@ -38,79 +37,43 @@ export function defineStore<T extends object>(fn: () => T): IsolatedStore<T> {
 
         // Some magic: Call the store to get the session store
         apply(target, thisArg, argArray) {
-            console.log('APPLY', { thisArg, argArray })
-            const result = Reflect.apply(getStore, undefined, argArray)
-            console.log('    result (APPLY):', result)
-            return result
+            return Reflect.apply(getStore, undefined, argArray)
         },
 
-        //// Redirect everything else to the session store
+        // Redirect everything else to the session store
 
         construct(target, argArray, newTarget) {
-            console.log('CONSTRUCT', { argArray, newTarget })
-            const result = Reflect.construct(getStore().constructor, argArray, newTarget)
-            console.log('    result (CONSTRUCT):', result)
-            return result
+            return Reflect.construct(getStore().constructor, argArray, newTarget)
         },
         defineProperty(target, prop, attributes) {
-            console.log('DEFINE_PROPERTY', { prop, attributes })
-            const result = Reflect.defineProperty(getStore(), prop, attributes)
-            console.log('    result (DEFINE_PROPERTY):', result)
-            return result
+            return Reflect.defineProperty(getStore(), prop, attributes)
         },
         deleteProperty(target, prop) {
-            console.log('DELETE_PROPERTY', { prop })
-            const result = Reflect.deleteProperty(getStore(), prop)
-            console.log('    result (DELETE_PROPERTY):', result)
-            return result
+            return Reflect.deleteProperty(getStore(), prop)
         },
         getOwnPropertyDescriptor(target, prop) {
-            console.log('GET_OWN_PROPERTY_DESCRIPTOR', { prop })
-            const result = Reflect.getOwnPropertyDescriptor(getStore(), prop)
-            console.log('    result (GET_OWN_PROPERTY_DESCRIPTOR):', result)
-            return result
+            return Reflect.getOwnPropertyDescriptor(getStore(), prop)
         },
         getPrototypeOf(target) {
-            console.log('GET_PROPERTY_OF')
-            const result = Reflect.getPrototypeOf(getStore())
-            console.log('    result (GET_PROPERTY_OF):', result)
-            return result
+            return Reflect.getPrototypeOf(getStore())
         },
         has(target, prop) {
-            console.log('HAS', { prop })
-            const result = Reflect.has(getStore(), prop)
-            console.log('    result (HAS):', result)
-            return result
+            return Reflect.has(getStore(), prop)
         },
         isExtensible(target) {
-            console.log('IS_EXTENSIBLE')
-            const result = Reflect.isExtensible(getStore())
-            console.log('    result (IS_EXTENSIBLE):', result)
-            return result
+            return Reflect.isExtensible(getStore())
         },
         ownKeys(target) {
-            console.log('OWN_KEYS')
-            const result = Reflect.ownKeys(getStore())
-            console.log('    result (OWN_KEYS):', result)
-            return result
+            return Reflect.ownKeys(getStore())
         },
         preventExtensions(target) {
-            console.log('PREVENT_EXTENSIONS')
-            const result = Reflect.preventExtensions(getStore())
-            console.log('    result (PREVENT_EXTENSIONS):', result)
-            return result
+            return Reflect.preventExtensions(getStore())
         },
         set(target, prop, value, receiver) {
-            console.log('SET', { prop, value, receiver })
-            const result = Reflect.set(getStore(), prop, value, receiver)
-            console.log('    result (SET):', result)
-            return result
+            return Reflect.set(getStore(), prop, value, receiver)
         },
         setPrototypeOf(target, proto) {
-            console.log('SET_PROPERTY_OF', { proto })
-            const result = Reflect.setPrototypeOf(getStore(), proto)
-            console.log('    result (SET_PROPERTY_OF):', result)
-            return result
+            return Reflect.setPrototypeOf(getStore(), proto)
         },
     }) as IsolatedStore<T>
 }
