@@ -1,5 +1,6 @@
 import { useSession } from './useSession'
 import { writable, readable, StartStopNotifier, Writable, Readable } from 'svelte/store'
+import { browser } from '$app/env'
 
 type IsolatedStore<T extends object> = (() => T) & T
 
@@ -16,9 +17,17 @@ export function defineStore<T extends object>(fn: () => T): IsolatedStore<T> {
         return stores.get(fn) as T
     }
 
+    if (browser) {
+        const store = fn()
+        // The magic function, that returns the session store on the server
+        // should just return the store when in the browser
+        const magic = () => store
+        return Object.assign(magic, store)
+    }
+
     // NOTE: We do not access this dymmy object and we make it a function so it
     //       is callable
-    const dummy = (() => {}) as T
+    const dummy = () => {}
 
     return new Proxy(dummy, {
         // The main part: Redirect property getter to session store
