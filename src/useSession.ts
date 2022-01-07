@@ -18,10 +18,11 @@ export function useSession(input?: LoadInput): { session: Session; sessionData: 
     }
 
     if (!sessionMap.has(session)) {
-        // TODO: `fetch: fetch` instead of `null`?
-        sessionMap.set(session, { stores: new Map(), fetch: null })
+        sessionMap.set(session, { stores: new Map(), fetch: input?.fetch })
     }
     const sessionData = sessionMap.get(session)
+
+    sessionData.fetch = sessionData.fetch ?? input?.fetch
 
     return {
         session,
