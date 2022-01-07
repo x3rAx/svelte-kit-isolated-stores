@@ -2,9 +2,9 @@ import { useSession } from './useSession'
 import { writable, readable, StartStopNotifier, Writable, Readable } from 'svelte/store'
 import { browser } from '$app/env'
 
-type IsolatedStore<T extends object> = (() => T) & T
+export type IsolatedStore<T extends Readable<unknown>> = (() => T) & T
 
-export function defineStore<T extends object>(fn: () => T): IsolatedStore<T> {
+export function defineStore<T extends Readable<unknown>>(fn: () => T): IsolatedStore<T> {
     function getStore(): T {
         // Get stores for session
         const { sessionData } = useSession()
@@ -87,10 +87,10 @@ export function defineStore<T extends object>(fn: () => T): IsolatedStore<T> {
     }) as IsolatedStore<T>
 }
 
-export function defineWritable<T>(createValue?: ()=>T, start?: StartStopNotifier<T>): Writable<T> {
+export function defineWritable<T>(createValue?: ()=>T, start?: StartStopNotifier<T>): IsolatedStore<Writable<T>> {
     return defineStore(() => writable(createValue(), start))
 }
 
-export function defineReadable<T>(createValue?: ()=>T, start?: StartStopNotifier<T>): Readable<T> {
+export function defineReadable<T>(createValue?: ()=>T, start?: StartStopNotifier<T>): IsolatedStore<Readable<T>> {
     return defineStore(() => readable(createValue(), start))
 }
