@@ -29,11 +29,11 @@ export function defineStore<T extends Readable<unknown>>(fn: () => T): IsolatedS
 
     // NOTE: We do not access this dymmy object but we make it a function so
     //       the proxy is callable
-    const dummy = (input: LoadInput) => {}
+    const dummy = (_input: LoadInput) => {}
 
     return new Proxy(dummy, {
         // The main part: Redirect property getter to session store
-        get(target, prop, receiver) {
+        get(_target, prop, _receiver) {
             // Get stores for session
             const { sessionData } = useSession()
             const { stores } = sessionData
@@ -47,43 +47,43 @@ export function defineStore<T extends Readable<unknown>>(fn: () => T): IsolatedS
         },
 
         // Some magic: Call the store to get the session store
-        apply(target, thisArg, argArray) {
-            return Reflect.apply(getStore, undefined, argArray)
+        apply(_target, thisArg, argArray) {
+            return Reflect.apply(getStore, thisArg, argArray)
         },
 
         // Redirect everything else to the session store
 
-        construct(target, argArray, newTarget) {
+        construct(_target, argArray, newTarget) {
             return Reflect.construct(getStore().constructor, argArray, newTarget)
         },
-        defineProperty(target, prop, attributes) {
+        defineProperty(_target, prop, attributes) {
             return Reflect.defineProperty(getStore(), prop, attributes)
         },
-        deleteProperty(target, prop) {
+        deleteProperty(_target, prop) {
             return Reflect.deleteProperty(getStore(), prop)
         },
-        getOwnPropertyDescriptor(target, prop) {
+        getOwnPropertyDescriptor(_target, prop) {
             return Reflect.getOwnPropertyDescriptor(getStore(), prop)
         },
-        getPrototypeOf(target) {
+        getPrototypeOf(_target) {
             return Reflect.getPrototypeOf(getStore())
         },
-        has(target, prop) {
+        has(_target, prop) {
             return Reflect.has(getStore(), prop)
         },
-        isExtensible(target) {
+        isExtensible(_target) {
             return Reflect.isExtensible(getStore())
         },
-        ownKeys(target) {
+        ownKeys(_target) {
             return Reflect.ownKeys(getStore())
         },
-        preventExtensions(target) {
+        preventExtensions(_target) {
             return Reflect.preventExtensions(getStore())
         },
-        set(target, prop, value, receiver) {
+        set(_target, prop, value, receiver) {
             return Reflect.set(getStore(), prop, value, receiver)
         },
-        setPrototypeOf(target, proto) {
+        setPrototypeOf(_target, proto) {
             return Reflect.setPrototypeOf(getStore(), proto)
         },
     }) as IsolatedStore<T>
