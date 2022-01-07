@@ -1,12 +1,16 @@
 import { session as sessionStore } from '$app/stores'
 import { get as $ } from 'svelte/store'
 import type { Session } from './svelteKitTypes'
-import { loadSession, sessionMap } from './useLoad'
-import type { SessionData } from './useLoad'
 import type { LoadInput } from '@sveltejs/kit'
 
+export type SessionData = { stores: Map<unknown, unknown>; fetch: typeof fetch }
+
+// Stores per session, weakly mapped to the session object. Allows the GC to
+// remove stores of sessions that are no longer existent
+export const sessionMap = new WeakMap<Session, SessionData>()
+
 export function useSession(input?: LoadInput): { session: Session; sessionData: SessionData } {
-    const session = input?.session ?? loadSession ?? ($(sessionStore) as Session)
+    const session = input?.session ?? ($(sessionStore) as Session)
 
     if (!session) {
         throw new Error('Failed to get session')
