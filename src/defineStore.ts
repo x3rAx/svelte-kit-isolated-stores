@@ -1,13 +1,14 @@
 import { useSession } from './useSession'
 import { writable, readable, StartStopNotifier, Writable, Readable } from 'svelte/store'
 import { browser } from '$app/env'
+import type { LoadInput } from '@sveltejs/kit'
 
 export type IsolatedStore<T extends Readable<unknown>> = (() => T) & T
 
 export function defineStore<T extends Readable<unknown>>(fn: () => T): IsolatedStore<T> {
-    function getStore(): T {
+    function getStore(input?: LoadInput): T {
         // Get stores for session
-        const { sessionData } = useSession()
+        const { sessionData } = useSession(input)
         const { stores } = sessionData
 
         // Get requested store from session stores, create if not exists
@@ -25,9 +26,9 @@ export function defineStore<T extends Readable<unknown>>(fn: () => T): IsolatedS
         return Object.assign(magic, store)
     }
 
-    // NOTE: We do not access this dymmy object and we make it a function so it
-    //       is callable
-    const dummy = () => {}
+    // NOTE: We do not access this dymmy object but we make it a function so
+    //       the proxy is callable
+    const dummy = (input: LoadInput) => {}
 
     return new Proxy(dummy, {
         // The main part: Redirect property getter to session store
