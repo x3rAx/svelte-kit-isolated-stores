@@ -1,8 +1,9 @@
 import { session as sessionStore } from '$app/stores'
 import { get as $ } from 'svelte/store'
-import type { Session } from './svelteKitTypes'
 import type { LoadInput } from '@sveltejs/kit'
+import type { Writable } from 'svelte/store'
 
+export type Session = Writable<unknown>
 export type SessionData = { stores: Map<unknown, unknown>; fetch: typeof fetch }
 
 // Stores per session, weakly mapped to the session object. Allows the GC to
