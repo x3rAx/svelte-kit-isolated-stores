@@ -3,7 +3,8 @@ import { writable, readable, StartStopNotifier, Writable, Readable } from 'svelt
 import { browser } from '$app/env'
 import type { LoadInput } from '@sveltejs/kit'
 
-export type IsolatedStore<T extends Readable<unknown>> = (() => T) & T
+type SessionStoreFn<T> = (input: LoadInput) => T
+export type IsolatedStore<T extends Readable<unknown>> = SessionStoreFn<T> & T
 
 export function defineStore<T extends Readable<unknown>>(fn: () => T): IsolatedStore<T> {
     function getStore(input?: LoadInput): T {
