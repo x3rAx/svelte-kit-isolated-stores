@@ -1,11 +1,16 @@
-import { useSession } from './useSession'
+import { SessionData, useSession } from './useSession'
 import { writable, readable, StartStopNotifier, Writable, Readable } from 'svelte/store'
 import type { LoadInput } from '@sveltejs/kit'
+import { LOAD_WITH_STORES_HINT } from './loadWithStoresHint'
 
+type SvelteKitFetch = (info: RequestInfo, init?: RequestInit) => Promise<Response>
 type SessionStoreFn<T> = (input: LoadInput) => T
+export type StoreInput = { fetch: SvelteKitFetch }
 export type IsolatedStore<T extends Readable<unknown>> = SessionStoreFn<T> & T
 
-export function defineStore<T extends Readable<unknown>>(fn: () => T): IsolatedStore<T> {
+export function defineStore<T extends Readable<unknown>>(
+    fn: (storeInput: StoreInput) => T,
+): IsolatedStore<T> {
     function getStore(input?: LoadInput): T {
         // Get stores for session
         const { sessionData } = useSession(input)
@@ -13,7 +18,8 @@ export function defineStore<T extends Readable<unknown>>(fn: () => T): IsolatedS
 
         // Get requested store from session stores, create if not exists
         if (!stores.has(fn)) {
-            stores.set(fn, fn())
+            const storeInput = createStoreInput(sessionData)
+            stores.set(fn, fn(storeInput))
         }
         return stores.get(fn) as T
     }
@@ -84,4 +90,17 @@ export function defineReadable<T>(
     start?: StartStopNotifier<T>,
 ): IsolatedStore<Readable<T>> {
     return defineStore(() => readable(createValue(), start))
+}
+
+function createStoreInput(sessionData: SessionData): StoreInput {
+    return {
+        get fetch() {
+            if (!sessionData.fetch) {
+                throw new Error(
+                    `\`fetch\` is not available to store without previous initialization. ${LOAD_WITH_STORES_HINT}`,
+                )
+            }
+            return sessionData.fetch
+        },
+    }
 }
