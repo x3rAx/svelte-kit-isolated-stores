@@ -35,17 +35,17 @@ export function loadWithStores<T extends IsolatedStores>(
         }
 
         if (typeof fn_OR_isolatedStores === 'function') {
-            const fn = fn_OR_isolatedStores
+            const fn = fn_OR_isolatedStores as LoadFn
 
             // Execute load function
             return fn(input)
         }
 
-        const isolatedStores = fn_OR_isolatedStores
-        const fn = undefined_OR_fn
+        const isolatedStores = fn_OR_isolatedStores as IsolatedStores
+        const fn = undefined_OR_fn as LoadFnWithStores<T>
 
         // Initialize requested stores with session
-        let stores
+        let stores: SessionStores<T>
         if (isolatedStores) {
             stores = Object.fromEntries(
                 Object.entries(isolatedStores).map(([key, store]) => [key, store(input)]),
