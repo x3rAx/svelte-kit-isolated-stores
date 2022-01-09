@@ -29,30 +29,34 @@ export function loadWithStores<T extends IsolatedStores>(
         // Populate sessionMap
         useSession(input)
 
-        if (typeof fn_OR_isolatedStores === 'undefined') {
+        function overload_1() {
             // Return empty object to prevent 404
             return {}
         }
 
-        if (typeof fn_OR_isolatedStores === 'function') {
-            const fn = fn_OR_isolatedStores as LoadFn
-
-            // Execute load function
+        function overload_2(fn: LoadFn) {
             return fn(input)
         }
 
-        const isolatedStores = fn_OR_isolatedStores as IsolatedStores
-        const fn = undefined_OR_fn as LoadFnWithStores<T>
+        function overload_3(isolatedStores: IsolatedStores, fn: LoadFnWithStores<T>) {
+            // Initialize requested stores with session
+            let stores: SessionStores<T>
+            if (isolatedStores) {
+                stores = Object.fromEntries(
+                    Object.entries(isolatedStores).map(([key, store]) => [key, store(input)]),
+                ) as SessionStores<T>
+            }
 
-        // Initialize requested stores with session
-        let stores: SessionStores<T>
-        if (isolatedStores) {
-            stores = Object.fromEntries(
-                Object.entries(isolatedStores).map(([key, store]) => [key, store(input)]),
-            ) as SessionStores<T>
+            // Execute load function with stores
+            return fn(input, stores)
         }
 
-        // Execute load function with stores
-        return fn(input, stores)
+        if (typeof fn_OR_isolatedStores === 'undefined') {
+            return overload_1()
+        }
+        if (typeof fn_OR_isolatedStores === 'function') {
+            return overload_2(fn_OR_isolatedStores)
+        }
+        return overload_3(fn_OR_isolatedStores, undefined_OR_fn)
     }
 }
