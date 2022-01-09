@@ -1,5 +1,5 @@
 import { SessionData, useSession } from './useSession'
-import { writable, readable, StartStopNotifier, Writable, Readable } from 'svelte/store'
+import type { Readable } from 'svelte/store'
 import type { LoadInput } from '@sveltejs/kit'
 import { LOAD_WITH_STORES_HINT } from './loadWithStoresHint'
 
@@ -76,20 +76,6 @@ export function defineStore<T extends Readable<unknown>>(
             return Reflect.setPrototypeOf(getStore(), proto)
         },
     }) as IsolatedStore<T>
-}
-
-export function defineWritable<T>(
-    createValue?: () => T,
-    start?: StartStopNotifier<T>,
-): IsolatedStore<Writable<T>> {
-    return defineStore(() => writable(createValue(), start))
-}
-
-export function defineReadable<T>(
-    createValue?: () => T,
-    start?: StartStopNotifier<T>,
-): IsolatedStore<Readable<T>> {
-    return defineStore(() => readable(createValue(), start))
 }
 
 function createStoreInput(sessionData: SessionData): StoreInput {
