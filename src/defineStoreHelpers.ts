@@ -7,7 +7,7 @@ import {
     derived,
     Unsubscriber,
 } from 'svelte/store'
-import { defineStore, IsolatedStore } from './defineStore'
+import { defineStore, IsolatedStore, isIsolatedStore } from './defineStore'
 
 export function defineWritable<T>(
     createValue?: () => T,
@@ -54,8 +54,12 @@ export function defineDerived<S extends Stores, T>(
     fn: any,
     createInitialValue: () => T = () => undefined,
 ): IsolatedStore<Readable<T>> {
-    if (Array.isArray(stores)) {
-        return defineStore(() => derived(stores, fn, createInitialValue()))
+    if (Array.isArray(stores) || isIsolatedStore(stores)) {
+        const store = stores as Writable<T> | Writable<T>[]
+
+        return defineStore(() => {
+            return derived(store, fn, createInitialValue())
+        })
     }
 
     // Get keys and values of `stores`, make sure their order matches by

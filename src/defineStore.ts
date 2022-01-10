@@ -8,6 +8,11 @@ type SessionStoreFn<T> = (input: LoadInput) => T
 export type StoreInput = { fetch: SvelteKitFetch }
 export type IsolatedStore<T extends Readable<unknown>> = SessionStoreFn<T> & T
 
+const IS_ISOLATED_STORE = Symbol('IS_ISOLATED_STORE')
+export function isIsolatedStore(store: any) {
+    return typeof store === 'function' && store[IS_ISOLATED_STORE]
+}
+
 export function defineStore<T extends Readable<unknown>>(
     fn: (storeInput: StoreInput) => T,
 ): IsolatedStore<T> {
@@ -26,11 +31,14 @@ export function defineStore<T extends Readable<unknown>>(
 
     // NOTE: We do not access this dymmy object but we make it a function so
     //       the proxy is callable
-    const dummy = (_input: LoadInput) => {}
+    const isolatedStore = (_input: LoadInput) => {}
 
-    return new Proxy(dummy, {
+    return new Proxy(isolatedStore, {
         // The main part: Redirect property getter to session store
         get(_target, prop, _receiver) {
+            if (prop === IS_ISOLATED_STORE) {
+                return true
+            }
             const store = getStore()
             return store[prop]
         },
