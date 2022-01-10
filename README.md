@@ -347,3 +347,18 @@ export const elapsed = defineStore(() => {
 })
 ```
 
+
+
+### During Component Initialization
+
+You can use the store as you are used to from Svelte during component
+initialization:
+
+```html
+<script language="ts">
+    import { count } from '$lib/stores/count'
+
+    // Use auto-subscribe syntax 
+    $count = 0
+</script>
+```
