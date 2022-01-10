@@ -56,3 +56,29 @@ SvelteKit's [`fetch`](https://kit.svelte.dev/docs#loading-input-fetch) method,
 which serializes the responses of requests made during SSR and sends them along
 the rendered page so that the client does not need to do the same request again
 during [hydration](https://kit.svelte.dev/docs#ssr-and-javascript).
+
+
+
+## How it Works (Implementation Details)
+
+Every store defined with `DefineStore` or one of the helper functions, is
+wrapped in a
+[`Proxy`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy)
+and when a property of the store (eg. the `subscribe` or `set` function) is
+accessed, the `Proxy` returns the property of the store that belongs to the
+current session / the current request.
+
+If the store does not exist for the current session yet, it is created and saved
+to a
+[`WeakMap`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/WeakMap)
+so the store can be retrieved if it is used again during the same request.
+
+The `WeakMap` is used to map the *session object* to a `Map` of stores. Doing
+so makes sure, that the garbage collector can clean away stores of sessions that
+do not exist anymore, because the belonging to request is done.
+
+On the client side, it works the same way but of course there is always only one
+session object. It would be possible to just return the store instead of the
+`Proxy` on the client, although this would prevent the aforementioned ability to
+use SvelteKit's `fetch` function in custom store functions.
+
