@@ -39,16 +39,16 @@ export function defineDerived<S extends Stores, T>(
     stores: S,
     fn: (values: StoresValues<S>, set: (value: T) => void) => Unsubscriber | void,
     createInitialValue?: () => T,
-): Readable<T>
+): IsolatedStore<Readable<T>>
 export function defineDerived<S extends Stores, T>(
     stores: S,
     fn: (values: StoresValues<S>) => T,
     createInitialValue?: () => T,
-): Readable<T>
+): IsolatedStore<Readable<T>>
 export function defineDerived<S extends Stores, T>(
     stores: S,
     fn: (values: StoresValues<S>) => T,
-): Readable<T>
+): IsolatedStore<Readable<T>>
 export function defineDerived<S extends Stores, T>(
     stores: S,
     fn: any,
