@@ -1,7 +1,7 @@
 {
-    "name": "svelte-kit-session-store",
+    "name": "svelte-kit-isolated-stores",
     "version": "1.0.0",
-    "description": "Create svelte stores that are tied to the current session and do not change server state for all requests",
+    "description": "Use stores in SvelteKit during SSR as you are used to from Svelte* without modifying server state.",
     "author": "Björn Richter <git@x3ro.dev>",
     "license": "MIT",
     "main": "dist/index.js",
