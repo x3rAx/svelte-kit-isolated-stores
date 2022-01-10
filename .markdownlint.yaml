@@ -1,0 +1,10 @@
+---
+
+no-inline-html: false
+
+no-multiple-blanks:
+    maximum: 3
+
+blanks-around-headings:
+    lines_above: 3
+    lines_below: 1
