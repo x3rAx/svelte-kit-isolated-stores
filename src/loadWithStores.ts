@@ -13,7 +13,7 @@ type SessionStores<T> = Expand<{
 }>
 
 type LoadFn = (input: LoadInput) => unknown
-type LoadFnWithStores<T> = (input: LoadInput, stores: SessionStores<T>) => unknown
+type LoadFnWithStores<T> = (stores: SessionStores<T>, input: LoadInput) => unknown
 
 export function loadWithStores(): Load
 export function loadWithStores(fn: LoadFn): Load
@@ -48,7 +48,7 @@ export function loadWithStores<T extends IsolatedStores>(
             }
 
             // Execute load function with stores
-            return fn(input, stores)
+            return fn(stores, input)
         }
 
         if (typeof fn_OR_isolatedStores === 'undefined') {
