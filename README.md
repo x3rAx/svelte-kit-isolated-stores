@@ -293,3 +293,57 @@ export const diagonal = defineDerived(
     ({ $width: w, $height: h }) => Math.sqrt(Math.pow(w, 2) + Math.pow(h, 2)),
 )
 ```
+
+
+
+### Extra Context for Stores (or: Be careful with Closures)
+
+[Closures](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Closures) is
+the concept of bundling togehter a function with it's surrounding state or
+*context*. It let's you access variables that are defined in the outside scope
+of the function.
+
+When using stores on the server side, using closures might have some side
+effects:
+
+For example the Svelte tutorial for
+[derived stores](https://svelte.dev/tutorial/derived-stores) uses a global
+variable `start` which contains a `Date`. This `start` variable is initialized
+when the module (the file) is first being loaded. In the browser this behaves as
+expected: `start` contains the `Date` when the page has loaded.
+
+On the server however, this would not be re-evaluated on every request and
+therefore would contain the date of the first request.
+
+To achieve the same behaviour, you can use `defineStore()` and return a derived
+store instead of a custom object:
+
+```typescript
+// time.ts
+
+import { defineStore, defineReadable, defineDerived } from 'svelte-kit-isolated-stores'
+
+export const time = defineReadable(
+    () => new Date(),
+    (set) => {
+        const interval = setInterval(() => {
+            set(new Date())
+        }, 1000)
+
+        // Return the stop function called when the last subscriber unsubscribes
+        return () => {
+            clearInterval(interval)
+        }
+    },
+)
+
+export const elapsed = defineStore(() => {
+    const start = new Date()
+
+    return defineDerived(
+        time,
+        ($time) => Math.round(($time.getTime() - start.getTime()) / 1000),
+    )
+})
+```
+
