@@ -11,6 +11,7 @@ modifying server state.__
 - [The Issue](#the-issue)
 - [The Solution](#the-solution)
 - [How it Works (Implementation Details)](#how-it-works-implementation-details)
+- [Installation](#installation)
 - [Usage](#usage)
   - [Defining Stores](#defining-stores)
     - [`defineStore()`](#definestore)
@@ -110,6 +111,39 @@ session object. It would be possible to just return the store instead of the
 use SvelteKit's `fetch` function in custom store functions (this is because with
 the `Proxy`, the store is created lazily when needed and not when the store
 module is loaded, which means we can pass in `fetch` from the `load` function).
+
+
+
+## Installation
+
+```bash
+npm install svelte-kit-isolated-stores
+```
+
+Because this package relies on SvelteKit's generated code, you have to prevent
+Vite from building it in advance:
+
+```javascript
+// svelte.config.js
+
+/** @type {import('@sveltejs/kit').Config} */
+const config = {
+    // ...
+    kit: {
+        // ...
+        vite: {
+            optimizeDeps: {
+                exclude: ["svelte-kit-isolated-stores"],    // <-- Add this line
+            },
+            ssr: {
+                noExternal: ["svelte-kit-isolated-stores"], // <-- Add this line
+            },
+        },
+    },
+}
+
+export default config
+```
 
 
 
