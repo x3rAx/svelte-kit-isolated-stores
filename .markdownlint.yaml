@@ -8,3 +8,7 @@ no-multiple-blanks:
 blanks-around-headings:
     lines_above: 3
     lines_below: 1
+
+line-length:
+    line_length: 80
+    code_block_line_length: 120

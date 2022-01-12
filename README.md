@@ -343,9 +343,13 @@ export const elapsed = defineStore(() => {
 
 
 
-### During Component Initialization
+### Using Stores
 
-You can use the store as you are used to from Svelte during component
+
+
+#### During Component Initialization
+
+You can use the store as if it was a normal Svelte store during component
 initialization:
 
 ```html
@@ -356,3 +360,271 @@ initialization:
     $count = 0
 </script>
 ```
+
+> During component initializion the store isolation mechanism has access to
+> `$app/stores` and can extract the session objectfrom there. This session is
+> crucial to be able to know which stores belong to the current request.
+
+
+
+#### In the template
+
+Just don't think about it!
+
+```html
+<script language="ts">
+    import { count } from '$lib/stores/count'
+</script>
+
+
+<h1>The count is: {$count}</h1>
+
+<div>
+    <button on:click={count.increment}>➕</button>
+    <button on:click={count.decrement}>➖</button>
+</div>
+
+<div>
+    <label>
+        Count:
+        <input type="number" bind:value={$count} />
+    </label>
+</div>
+```
+
+
+
+#### During `load`ing
+
+Layouts and pages in SvelteKit can export a `load` function, which is executed
+before the component is initialized (a layout / page is also just a Svelte
+component).
+
+When not in *component initialization*, the isolation mechanism does not have
+access to the current session object through `$app/stores`. Therefore, we must
+pass the `session` object of the input argument of the load function to the
+isolation logic.
+
+We do that by **calling** the store as if it was a function and we pass in the
+`input` argument of the `load` function:
+
+```html
+<script lang="ts" context="module">
+    import { counter } from '$lib/stores/counter'
+    import type { Load } from '@sveltejs/kit'
+
+    export const load: Load = (input) => {
+        // This is now the real store instance
+        const _counter = counter(input)
+
+        // For some reason we want the counter value to be `10` on this page ¯\_(ツ)_/¯
+        _counter.set(10)
+
+        // Don't forget to return an object, otherwise you'll get a 404
+        return {}
+    }
+</script>
+
+{$counter}
+```
+
+This might look a bit strange at first and is also a little boilerplaty. But
+don't worry, you will not need to do this too often thanks to another
+convenience function:
+
+
+
+##### `loadWithStores()`
+
+This function is used to wrap the actual `load` method. It can be used used in a
+variety of ways. But all of them include exporting the result as `load` in the
+`module` context of a layout of page component.
+
+1. You can just call it without arguments. This makes sure that the stores get
+    access to SvelteKit's `fetch` function (more on that later).
+
+    It also does some "magic" to make things easier for code that runs
+    exclusively in the browser (and by "magic" I mean, it stores the session in
+    a global variable, because in the browser there is no server state that can
+    be modified 😉).
+
+    It is generally a good idea to do this in the top level `__layout.svelte`
+    and any `__layout.reset.svelte` files.
+
+    ```html
+    <script lang="ts" context="module">
+        import { loadWithStores } from 'svelte-kit-isolated-stores'
+
+        export const load = loadWithStores()
+    </script>
+    ```
+
+    This will export a load function that effectively returns `{}` to prevent a
+    `404` error.
+
+2. You can pass in a custom load function. Like with passing no arguments, this
+    will let stores access `fetch`.
+
+    ```html
+    <script lang="ts" context="module">
+        import { loadWithStores } from 'svelte-kit-isolated-stores'
+
+        export const load = loadWithStores(({ params }) => {
+            const userId = params['id']
+            // Do some load logic here, maybe return `props` or `stuff` or whatever.
+
+            // Don't forget to return an object, otherwise you'll get a 404
+            return {}
+        })
+    </script>
+    ```
+
+3. You can pass in an object where each value is an isolated store as the first
+    argument and a custom `load` function as second argument. This custom load
+    function takes as first argument an object of real stores and as second
+    argument the `LoadInput` object that a normal `load` function would take as
+    the first argument.
+
+    ```html
+    <script lang="ts" context="module">
+        import { loadWithStores } from 'svelte-kit-isolated-stores'
+        import { counter } from '$lib/stores/counter'
+
+        export const load = loadWithStores({ counter }, ({ counter }, { params }) => {
+            // Inside this function, the `counter` variable contains the real store
+            // instance, not the isolated store
+
+            const userId = Number(params['userId'])
+
+            // For some reason we want the counter value to be the user id on this
+            // page ¯\_(ツ)_/¯
+            counter.set(userId)
+
+            // Don't forget to return an object, otherwise you'll get a 404
+            return {}
+        })
+    </script>
+
+    {$counter}
+    ```
+
+
+
+#### Outside Component Initializion and outside `load()`
+
+The isolation mechanism needs to know what is the current session. Outside
+component initialization and outside `load()` there is no reliable way to access
+the `session` object in general.
+
+
+
+##### In the Browser
+
+Take for example the following code:
+
+```html
+<script lang="ts">
+    import { counter } from '$lib/stores/counter'
+
+    function incrementBy(n) {
+        counter.update(c => c + n)
+    }
+</script>
+
+<h1>Current count: {$counter}</h1>
+
+<button on:click="{() => incrementBy(1)}">+1</button>
+<button on:click="{() => incrementBy(10)}">+10</button>
+```
+
+The `incrementBy()` method is not running during component initialization. So
+when it accesses the `update` property of `counter`, the isolation wrapper has
+no idea what the current session is. Normally this would fail. But there is a
+fix:
+
+While in the browser, there is only ever one session, so it is okay to work with
+global variables. Therefore whenever the isolation mechanism first gets access
+to the `session` object, it stores a global reference to it, so it can be
+accessed later.
+
+If you use the store (or any isolated store) during component initialization for
+example (e.g. you set it to some value) then the above example would work. But
+you do not want to rely on someon else having used a store before you.
+
+To ensure the isolation mechanism *always* has access to the `session`, make
+sure to export a call to `loadWithStores()` (with or without parameters) as
+`load` in the top level `__layout.svelte` and any `__layout.reset.svelte` files:
+
+```html
+<!-- `__layout.svelte` or any `__layout.reset.svelte` -->
+<script lang="ts" context="module">
+    import { loadWithStores } from 'svelte-kit-isolated-stores'
+
+    export const load = loadWithStores()
+</script>
+```
+
+
+
+##### On the Server
+
+Luckily most code that runs outside component initialization and outside the
+`load` function is only ever run in the browser.
+
+For example any event handlers do usually not run on the server and you should
+avoid async code in your component initialization during SSR anyway, as
+it will not effect the rendered page HTML.
+
+Also Svelte's `onMount()` function is only run in the browser.
+
+But there is at least one situation where code runs on the server outside
+component initialization:
+
+The `onDestroy()` is triggert during SSR (or rather when SSR is done). And if
+you try to use an isolated store there, it will fail to access the `session`
+object and throw an exception.
+
+> There may be other situation where this can happen, I just didn't encounter
+> others yet.
+
+To mitigate this, you can either make sure the store is only accessed when in
+the browser:
+
+```html
+<script lang="ts">
+    import { browser } from '$app/env';
+    import { counter } from '$lib/stores/counter'
+
+    function onDestroy() {
+        if (browser) {
+            counter.reset()
+        }
+    }
+</script>
+```
+
+Or you can get yourself an instance of the real store object during component
+initialization and use it later:
+
+```html
+<script lang="ts">
+    import { browser } from '$app/env';
+
+    // Import the counter with an alias name (can be anything, but I like to
+    // prefix the name with `use` as a convention)
+    import { counter as useCounter } from '$lib/stores/counter'
+
+    // Get an instance of the real store object by calling the isolated store
+    const counter = useCounter()
+    // From here on, the store can be used *exactly* like in plain Svelte
+
+    function onDestroy() {
+        counter.reset()
+    }
+</script>
+```
+
+This last version is only necessary if you must call a function of the store
+that has side effects like calling an API. If you just want to reset the store
+value like in the example, you can just skip this on the server, as the store is
+garbage collected on the server after the request is done.
