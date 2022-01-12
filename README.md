@@ -628,3 +628,9 @@ This last version is only necessary if you must call a function of the store
 that has side effects like calling an API. If you just want to reset the store
 value like in the example, you can just skip this on the server, as the store is
 garbage collected on the server after the request is done.
+
+
+
+## License
+
+[MIT](LICENSE)
