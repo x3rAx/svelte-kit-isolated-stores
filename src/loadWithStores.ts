@@ -2,6 +2,7 @@ import type { Load, LoadInput } from '@sveltejs/kit'
 import type { Readable } from 'svelte/store'
 import type { IsolatedStore } from './defineStore'
 import type { Expand } from './expandType'
+import { OverloadError } from './OverloadError'
 import { useSession } from './useSession'
 
 type IsolatedStores = {
@@ -57,6 +58,9 @@ export function loadWithStores<T extends IsolatedStores>(
         if (typeof fn_OR_isolatedStores === 'function') {
             return overload_2(fn_OR_isolatedStores)
         }
-        return overload_3(fn_OR_isolatedStores, undefined_OR_fn)
+        if (typeof fn_OR_isolatedStores === 'object' && typeof undefined_OR_fn === 'function') {
+            return overload_3(fn_OR_isolatedStores, undefined_OR_fn)
+        }
+        throw new OverloadError()
     }
 }
