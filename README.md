@@ -12,7 +12,8 @@ modifying server state.
 ## The Issue
 
 [Svelte](https://svelte.dev/) is great. But even though it is very fast to
-render a page in the browser with Svelte, it has some drawbacks:
+render a page *in the browser* with Svelte, it has some drawbacks compared to
+server side rendered HTML:
 
 - Displaying pre-rendered HTML is faster
 - Indexing / SEO is not going to work without executing JS
@@ -21,13 +22,17 @@ render a page in the browser with Svelte, it has some drawbacks:
 [SvelteKit](https://kit.svelte.dev/) solves these (and more) using Server Side
 Rendering (SSR). But it comes with it's own caveats:
 
-If your component uses a [store](https://svelte.dev/tutorial/writable-stores)
-defined in a separate module (exported from a `.ts` or `.js` file) and uses it
-during [loading](https://kit.svelte.dev/docs#loading) or during component
-initialization (in short: during SSR), then your rendered component depends on
-the state of the store on the server side.
+If you define a [store](https://svelte.dev/tutorial/writable-stores) in a module
+(i.e. exported from a `.ts` or `.js` file) or defined globally inside a `<script
+context="module">` tag, this store will only be created when the server loads
+the module for the first time
 
-If you component then also writes to the store during SSR, it alters server
+If your component uses such a store during
+[loading](https://kit.svelte.dev/docs#loading) or during component
+initialization while rendering on the server, then your component
+depends on the state of the store on the server side.
+
+If yor component then also writes to the store during SSR, it alters server
 state! This means, that for **all upcoming requests**, the value of the store
 **will be changed**. In the best case, this results in "flickering", when
 reloading the page, where the SSR version of the page has old data which is
@@ -35,8 +40,7 @@ shortly displayed until the
 [hydration](https://kit.svelte.dev/docs#ssr-and-javascript) replaces it with the
 updated value.
 
-**In the worst case, it leaks private information to other users of your page /
-app!**
+**In the worst case, it leaks private information of one user to other users!**
 
 
 
@@ -45,7 +49,7 @@ app!**
 SvelteKit has a concept called the
 [session](https://kit.svelte.dev/docs#loading-input-session). It is a
 serializable JavaScript object which is used to pass data from the server to the
-client. The session object is created on the server *per request*.
+client. The session object is created on the server **per request**.
 
 The *Isolated Stores* of this package use these session objects to tell appart
 different requests, and *re-creates the stores for each new session*.
@@ -75,12 +79,14 @@ so the store can be retrieved if it is used again during the same request.
 
 The `WeakMap` is used to map the *session object* to a `Map` of stores. Doing
 so makes sure, that the garbage collector can clean away stores of sessions that
-do not exist anymore, because the belonging to request is done.
+do not exist anymore, after a request is done.
 
 On the client side, it works the same way but of course there is always only one
 session object. It would be possible to just return the store instead of the
 `Proxy` on the client, although this would prevent the aforementioned ability to
-use SvelteKit's `fetch` function in custom store functions.
+use SvelteKit's `fetch` function in custom store functions (this is because with
+the `Proxy`, the store is created lazily when needed and not when the store
+module is loaded, which means we can pass in `fetch` from the `load` function).
 
 
 
