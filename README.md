@@ -100,14 +100,22 @@ want to do, there is minimal to no boilerplate necessary.
 
 ### Defining Stores
 
-This works almost exactly like it does with plain Svelte.
-
 
 
 #### `defineStore()`
 
-This package provides a `defineStore()` method that takes a function, to create
-a [custom store](https://svelte.dev/tutorial/custom-stores).
+This package provides a `defineStore()` method that takes a function, that
+creates a [custom store](https://svelte.dev/tutorial/custom-stores).
+
+A store is defined in Svelte as an object that has at least a `subscribe()`
+method which, when executed, returns an method to unsubscribe.
+
+It can then also have other properties or methods. Common methods are `set()`
+and `update()` which are used to set and update the value of the store.
+
+But you can also include other methods. In the example below, the methods
+`increment()`, `decrement()` and `reset()` are also added to the store object
+to make it more easy to use the `counter`.
 
 ```typescript
 // counter.ts
@@ -168,6 +176,9 @@ export const count = defineWritable(() => 0)
 To define simple readable stores use the helper function `defineReadable()`.
 Like with `defineWritable()` the initial value must be returned from a function.
 
+The second argument is the `start` function. This should be familiar from
+Svelte's `readable()` stores.
+
 ```typescript
 // time.ts
 import { defineReadable } from 'svelte-kit-isolated-stores'
@@ -177,6 +188,7 @@ export const time = defineReadable(
     () => new Date(),
     // The start function called when the first subscriber subscribes
     (set) => {
+        set(new Date())
         const interval = setInterval(() => {
             set(new Date())
         }, 1000)
@@ -196,65 +208,38 @@ export const time = defineReadable(
 Derived stores change their value depending on other stores. Use the helper
 function `defineDerived()` to create an isolated derived store.
 
-Like with Svelte's `derived()` method, it is possible to pass a single store or
-an array of one or more dependent stores to `defineDerived()`.
+Like with Svelte's
+[`derived()`](https://svelte.dev/docs#run-time-svelte-store-derived) method, it
+is possible to pass a single store or an array of one or more dependent stores
+to `defineDerived()`.
 
-First an example with just a singe dependent store:
+When deriving from a single store, the dependent store can be provided without
+being encapsulated in an array. The first argument of the callback function is
+then just the store value.
 
 ```typescript
-// time.ts
+// double.ts
 
-import { defineReadable } from 'svelte-kit-isolated-stores'
+import { defineWritable, defineDerived } from 'svelte-kit-isolated-stores'
 
-export const time = defineReadable(
-    () => new Date(),
-    (set) => {
-        const interval = setInterval(() => {
-            set(new Date())
-        }, 1000)
+export const someValue = defineWritable(() => 0)
 
-        // Return the stop function called when the last subscriber unsubscribes
-        return () => {
-            clearInterval(interval)
-        }
-    },
-)
-
-// When deriving from a single store, the dependent store can be provided
-// without being encapsulated in an array.
-// The first argument of the callback function is then just the store value
-export const timeBerlin = defineDerived(
-    time,
-    $time => $time.toLocaleString({ timeZone: 'Europe/Berlin' }),
-)
-
-function tokyoTime(time: Date) {
-    return time.toLocaleString({ timeZone: 'Asia/Tokyo' })
-}
-
-export const timeTokyo = defineDerived(
-    time,
-    $time => tokyoTime($time),
-    // Optional initial value provider
-    () => tokyoTime(new Date()),
-)
+export const double = defineDerived(someValue, $someValue => $someValue * 2)
 ```
 
-Now for multiple dependent stores:
+Multiple stores can be derived from by passing them as an array. The first
+argument of the callback function is then an array of store values instead of
+just a single store value. The array can be destructured to arbitrary names
+(however it is convention to prefix the store names with `$` for the values).
 
 ```typescript
-// square.ts
+// rectangle.ts
 
 import { defineStore, defineReadable, defineDerived } from 'svelte-kit-isolated-stores'
 
 export const width = defineWritable(() => 0)
 export const height = defineWritable(() => 0)
 
-// Pass multiple stores as an array.
-// The first argument of the callback function is then an array of store values
-// instead of just a single store value.
-// The array can be destructured to arbitrary names (convention is to prefix
-// store names with `$`)
 export const area = defineDerived(
     [width, height],
     ([$width, $height]) => $width * $height
@@ -262,18 +247,19 @@ export const area = defineDerived(
 
 ```
 
-However, and contrary to Svelte's `derive()` it is also possible to pass an
-object containing dependent stores. The first argument of the callback function
-is then an object of store values where each key in the stores object is
-prefixed with a `$`.
+Contrary to Svelte's `derive()` it is also possible to pass an object containing
+dependent stores to `defineDerived()`. The first argument of the callback
+function is then an object of store values where each key of the stores object
+is prefixed with a `$`.
 
 This feature is added to increadse DX (developer experience), because using
-objects, the intellisense can help with destructuring. It can can also help to
-reduce bugs, as swapping the positions of the stores in the input object does
-not silently change the order of the store values.
+objects (together with TypeScript), the intellisense can help with
+destructuring. It can can also help to reduce bugs, as swapping the positions of
+the stores in the input object does not silently change the order of the store
+values (as they would in the array example above).
 
 > However, keep in mind that this adds a layer around the original `derived()`
-> implementation and, for *very* frequently changing stores, this might impact
+> implementation and, for *very* frequently changing stores, this *might* impact
 > performance.
 
 ```typescript
@@ -284,18 +270,18 @@ import { defineStore, defineReadable, defineDerived } from 'svelte-kit-isolated-
 export const width = defineWritable(() => 0)
 export const height = defineWritable(() => 0)
 
-// Dependent stores are passed in as object (using object property value
-// shorthand)
-// The object can directly be destructured. Keep in mind, that every key has
-// been prefixed with `$`.
 export const area = defineDerived(
-    { width, height }, // <-- this is an object, not an array
+    // Dependent stores are passed in as object (using object property value
+    // shorthand)
+    { width, height },
+    // The object can directly be destructured. Keep in mind, that every key has
+    // been prefixed with `$`.
     ({ $width, $height }) => $width * $height,
 )
 
-// You can assign different names using destructuring syntax
 export const diagonal = defineDerived(
     { width, height },
+    // Of course, you can assign different names using destructuring syntax
     ({ $width: w, $height: h }) => Math.sqrt(Math.pow(w, 2) + Math.pow(h, 2)),
 )
 ```
