@@ -4,6 +4,10 @@
     "description": "Use stores in SvelteKit during SSR as you are used to from Svelte* without modifying server state.",
     "author": "Björn Richter <git@x3ro.dev>",
     "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://gitlab.com/x3ro/svelte-kit-isolated-stores"
+    },
     "main": "dist/main.js",
     "types": "dist/main.d.ts",
     "files": [
