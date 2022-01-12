@@ -23,8 +23,8 @@ export function loadWithStores<T extends IsolatedStores>(
     fn: LoadFnWithStores<T>,
 ): Load
 export function loadWithStores<T extends IsolatedStores>(
-    fn_OR_isolatedStores?: LoadFn | T,
-    undefined_OR_fn?: LoadFnWithStores<T>,
+    arg_1?: LoadFn | T,
+    arg_2?: LoadFnWithStores<T>,
 ): Load {
     return (input: LoadInput) => {
         // Populate sessionMap
@@ -52,14 +52,14 @@ export function loadWithStores<T extends IsolatedStores>(
             return fn(stores, input)
         }
 
-        if (typeof fn_OR_isolatedStores === 'undefined') {
+        if (typeof arg_1 === 'undefined') {
             return overload_1()
         }
-        if (typeof fn_OR_isolatedStores === 'function') {
-            return overload_2(fn_OR_isolatedStores)
+        if (typeof arg_1 === 'function') {
+            return overload_2(arg_1)
         }
-        if (typeof fn_OR_isolatedStores === 'object' && typeof undefined_OR_fn === 'function') {
-            return overload_3(fn_OR_isolatedStores, undefined_OR_fn)
+        if (typeof arg_1 === 'object' && typeof arg_2 === 'function') {
+            return overload_3(arg_1, arg_2)
         }
         throw new OverloadError()
     }
