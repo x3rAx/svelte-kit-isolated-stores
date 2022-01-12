@@ -1,6 +1,6 @@
 {
     "name": "svelte-kit-isolated-stores",
-    "version": "1.0.0-alpha",
+    "version": "1.0.0-alpha.1",
     "description": "Use stores in SvelteKit during SSR as you are used to from Svelte* without modifying server state.",
     "author": "Björn Richter <git@x3ro.dev>",
     "license": "MIT",
