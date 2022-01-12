@@ -305,15 +305,17 @@ when the module (the file) is first being loaded. In the browser this behaves as
 expected: `start` contains the `Date` when the page has loaded.
 
 On the server however, this would not be re-evaluated on every request and
-therefore would contain the date of the first request.
+therefore would contain the date of the first request (or more precise the date
+the module has first been loaded on the server).
 
-To achieve the same behaviour, you can use `defineStore()` and return a derived
-store instead of a custom object:
+To achieve the same behaviour as in the Svelte tutorial, you can use
+`defineStore()` and return a derived store instead of a custom object:
 
 ```typescript
 // time.ts
 
-import { defineStore, defineReadable, defineDerived } from 'svelte-kit-isolated-stores'
+import { defineStore, defineReadable } from 'svelte-kit-isolated-stores'
+import { derived } from 'svelte/stores'
 
 export const time = defineReadable(
     () => new Date(),
@@ -322,17 +324,17 @@ export const time = defineReadable(
             set(new Date())
         }, 1000)
 
-        // Return the stop function called when the last subscriber unsubscribes
-        return () => {
-            clearInterval(interval)
-        }
+        return () => { clearInterval(interval) }
     },
 )
 
 export const elapsed = defineStore(() => {
     const start = new Date()
 
-    return defineDerived(
+    // Instead of returning an object with a `subscribe()` method, you can just
+    // return a store. It is safe to use sveltes `derived()` here, as it will
+    // be re-created when the store defined by `defineStore()` is recreated.
+    return derived(
         time,
         ($time) => Math.round(($time.getTime() - start.getTime()) / 1000),
     )
