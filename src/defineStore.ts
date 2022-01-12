@@ -4,7 +4,7 @@ import type { LoadInput } from '@sveltejs/kit'
 import { LOAD_WITH_STORES_HINT } from './loadWithStoresHint'
 
 type SvelteKitFetch = (info: RequestInfo, init?: RequestInit) => Promise<Response>
-type SessionStoreFn<T> = (input: LoadInput) => T
+type SessionStoreFn<T> = (input?: LoadInput) => T
 export type StoreInput = { fetch: SvelteKitFetch }
 export type IsolatedStore<T extends Readable<unknown>> = SessionStoreFn<T> & T
 
