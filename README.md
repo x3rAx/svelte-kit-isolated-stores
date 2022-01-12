@@ -1,11 +1,34 @@
-# SvelteKit Isolated Stores
+# SvelteKit Isolated Stores <!-- omit in toc -->
 
-<i>
-Use stores in SvelteKit during SSR as you are used to from Svelte* without
-modifying server state.
+__Use stores in SvelteKit during SSR as you are used to from Svelte* without
+modifying server state.__
 
-<small>* with minimal boilerplate code</small>
-</i>
+<small>_* with minimal boilerplate code_</small>
+
+
+---
+
+- [The Issue](#the-issue)
+- [The Solution](#the-solution)
+- [How it Works (Implementation Details)](#how-it-works-implementation-details)
+- [Usage](#usage)
+  - [Defining Stores](#defining-stores)
+    - [`defineStore()`](#definestore)
+    - [`defineWritable()`](#definewritable)
+    - [`defineReadable()`](#definereadable)
+    - [`defineDerived()`](#definederived)
+  - [Extra Context for Stores (or: Be careful with Closures)](#extra-context-for-stores-or-be-careful-with-closures)
+  - [Using Stores](#using-stores)
+    - [During Component Initialization](#during-component-initialization)
+    - [In the template](#in-the-template)
+    - [During `load`ing](#during-loading)
+      - [`loadWithStores()`](#loadwithstores)
+    - [Outside Component Initializion and outside `load()`](#outside-component-initializion-and-outside-load)
+      - [In the Browser](#in-the-browser)
+      - [On the Server](#on-the-server)
+- [License](#license)
+
+---
 
 
 
