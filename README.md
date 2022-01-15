@@ -117,7 +117,7 @@ module is loaded, which means we can pass in `fetch` from the `load` function).
 ## Installation
 
 ```bash
-npm install svelte-kit-isolated-stores
+npm install -D svelte-kit-isolated-stores
 ```
 
 Because this package relies on SvelteKit's generated code, you have to prevent
@@ -218,7 +218,8 @@ initial value is a reference type like an object or an array, different
 instances of the same store would share this data.
 
 ```typescript
-// time.ts
+// count.ts
+
 import { defineWritable } from 'svelte-kit-isolated-stores'
 
 // --- Initial value creator -------vvvvvvv
@@ -238,6 +239,7 @@ Svelte's `readable()` stores.
 
 ```typescript
 // time.ts
+
 import { defineReadable } from 'svelte-kit-isolated-stores'
 
 export const time = defineReadable(
@@ -292,7 +294,7 @@ just a single store value. The array can be destructured to arbitrary names
 ```typescript
 // rectangle.ts
 
-import { defineStore, defineReadable, defineDerived } from 'svelte-kit-isolated-stores'
+import { defineWritable, defineDerived } from 'svelte-kit-isolated-stores'
 
 export const width = defineWritable(() => 0)
 export const height = defineWritable(() => 0)
@@ -301,7 +303,6 @@ export const area = defineDerived(
     [width, height],
     ([$width, $height]) => $width * $height
 )
-
 ```
 
 Contrary to Svelte's `derive()` it is also possible to pass an object containing
@@ -320,9 +321,9 @@ values (as they would in the array example above).
 > performance.
 
 ```typescript
-// square.ts
+// rectangle.ts
 
-import { defineStore, defineReadable, defineDerived } from 'svelte-kit-isolated-stores'
+import { defineWritable, defineDerived } from 'svelte-kit-isolated-stores'
 
 export const width = defineWritable(() => 0)
 export const height = defineWritable(() => 0)
@@ -372,7 +373,7 @@ To achieve the same behaviour as in the Svelte tutorial, you can use
 // time.ts
 
 import { defineStore, defineReadable } from 'svelte-kit-isolated-stores'
-import { derived } from 'svelte/stores'
+import { derived } from 'svelte/store'
 
 export const time = defineReadable(
     () => new Date(),
@@ -411,11 +412,13 @@ initialization:
 
 ```html
 <script language="ts">
-    import { count } from '$lib/stores/count'
+    import { counter } from '$lib/stores/counter'
 
-    // Use auto-subscribe syntax 
-    $count = 0
+    // Use auto-subscribe syntax
+    $counter = 10
 </script>
+
+{$counter}
 ```
 
 > During component initializion the store isolation mechanism has access to
@@ -430,23 +433,23 @@ Just don't think about it!
 
 ```html
 <script language="ts">
-    import { count } from '$lib/stores/count'
+    import { counter } from '$lib/stores/counter'
 </script>
 
-
-<h1>The count is: {$count}</h1>
+<h1>The count is: {$counter}</h1>
 
 <div>
-    <button on:click={count.increment}>➕</button>
-    <button on:click={count.decrement}>➖</button>
+    <button on:click={counter.decrement}>➖</button>
+    <button on:click={counter.increment}>➕</button>
 </div>
 
 <div>
     <label>
         Count:
-        <input type="number" bind:value={$count} />
+        <input type="number" bind:value={$counter} />
     </label>
 </div>
+
 ```
 
 
@@ -474,8 +477,8 @@ We do that by **calling** the store as if it was a function and we pass in the
         // This is now the real store instance
         const _counter = counter(input)
 
-        // For some reason we want the counter value to be `10` on this page ¯\_(ツ)_/¯
-        _counter.set(10)
+        // For some reason we want the counter value to be `1337` on this page ¯\_(ツ)_/¯
+        _counter.set(1337)
 
         // Don't forget to return an object, otherwise you'll get a 404
         return {}
@@ -493,8 +496,8 @@ convenience function:
 
 ##### `loadWithStores()`
 
-This function is used to wrap the actual `load` method. It can be used used in a
-variety of ways. But all of them include exporting the result as `load` in the
+This function is used to wrap the actual `load` function. It can be used used in
+a variety of ways. But all of them include exporting the result as `load` in the
 `module` context of a layout of page component.
 
 1. You can just call it without arguments. This makes sure that the stores get
@@ -514,19 +517,20 @@ variety of ways. But all of them include exporting the result as `load` in the
 
         export const load = loadWithStores()
     </script>
+
+    <slot />
     ```
 
     This will export a load function that effectively returns `{}` to prevent a
     `404` error.
 
-2. You can pass in a custom load function. Like with passing no arguments, this
-    will let stores access `fetch`.
+2. You can also pass in a custom load function.
 
     ```html
     <script lang="ts" context="module">
         import { loadWithStores } from 'svelte-kit-isolated-stores'
 
-        export const load = loadWithStores(({ params }) => {
+        export const load = loadWithStores(({ params, fetch}) => {
             const userId = params['id']
             // Do some load logic here, maybe return `props` or `stuff` or whatever.
 
@@ -577,40 +581,47 @@ the `session` object in general.
 
 ##### In the Browser
 
-Take for example the following code:
+Consider the following code:
 
 ```html
 <script lang="ts">
     import { counter } from '$lib/stores/counter'
+    import { onMount } from 'svelte'
+    import { get } from 'svelte/store'
+
+    let counterVal
 
     function incrementBy(n) {
-        counter.update(c => c + n)
+        // ERROR: Store used outside component initialization
+        counter.update((c) => {
+            counterVal = c + n
+            return counterVal
+        })
     }
 </script>
-
-<h1>Current count: {$counter}</h1>
 
 <button on:click="{() => incrementBy(1)}">+1</button>
 <button on:click="{() => incrementBy(10)}">+10</button>
 ```
 
-The `incrementBy()` method is not running during component initialization. So
+The `incrementBy()` method executed *after* component initialization. So
 when it accesses the `update` property of `counter`, the isolation wrapper has
 no idea what the current session is. Normally this would fail. But there is a
 fix:
 
-While in the browser, there is only ever one session, so it is okay to work with
-global variables. Therefore whenever the isolation mechanism first gets access
-to the `session` object, it stores a global reference to it, so it can be
-accessed later.
+**While in the browser**, there is only ever one session, so it is okay to work
+with global variables here. Therefore, whenever the isolation mechanism first
+gets access to the `session` object, it stores a global reference to it, so it
+can be accessed later.
 
-If you use the store (or any isolated store) during component initialization for
-example (e.g. you set it to some value) then the above example would work. But
-you do not want to rely on someon else having used a store before you.
+If you use any isolated store during component initialization (e.g. you set
+it to some value or you subscribe to it) then the above example would work. But
+**you do not want to rely on someon else having used a store before you**.
 
-To ensure the isolation mechanism *always* has access to the `session`, make
-sure to export a call to `loadWithStores()` (with or without parameters) as
-`load` in the top level `__layout.svelte` and any `__layout.reset.svelte` files:
+Therefore, to ensure the isolation mechanism *always* has access to the
+`session`, make sure to export a call to `loadWithStores()` (with or without
+arguments) as `load` in the top level `__layout.svelte` and any
+`__layout.reset.svelte` files:
 
 ```html
 <!-- `__layout.svelte` or any `__layout.reset.svelte` -->
@@ -637,8 +648,8 @@ Also Svelte's `onMount()` function is only run in the browser.
 But there is at least one situation where code runs on the server outside
 component initialization:
 
-The `onDestroy()` is triggert during SSR (or rather when SSR is done). And if
-you try to use an isolated store there, it will fail to access the `session`
+The `onDestroy()` hook is triggert during SSR (or rather when SSR is done). And
+if you try to use an isolated store there, it will fail to access the `session`
 object and throw an exception.
 
 > There may be other situation where this can happen, I just didn't encounter
@@ -649,14 +660,15 @@ the browser:
 
 ```html
 <script lang="ts">
-    import { browser } from '$app/env';
+    import { onDestroy } from 'svelte'
+    import { browser } from '$app/env'
     import { counter } from '$lib/stores/counter'
 
-    function onDestroy() {
+    onDestroy(() => {
         if (browser) {
             counter.reset()
         }
-    }
+    })
 </script>
 ```
 
@@ -665,7 +677,7 @@ initialization and use it later:
 
 ```html
 <script lang="ts">
-    import { browser } from '$app/env';
+    import { onDestroy } from 'svelte'
 
     // Import the counter with an alias name (can be anything, but I like to
     // prefix the name with `use` as a convention)
@@ -675,9 +687,9 @@ initialization and use it later:
     const counter = useCounter()
     // From here on, the store can be used *exactly* like in plain Svelte
 
-    function onDestroy() {
+    onDestroy(() => {
         counter.reset()
-    }
+    })
 </script>
 ```
 
