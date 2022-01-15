@@ -58,8 +58,7 @@ function getOrCreateSessionData(session: Session, input?: LoadInput) {
 function getSessionFromSvelteKitStores() {
     try {
         return $(sessionStore)
-    } catch (e) {
-        console.error(e)
+    } catch {
         throw new Error(
             `Isolated store was used outside component initialization and without previous initialization. ${LOAD_WITH_STORES_HINT}`,
         )
