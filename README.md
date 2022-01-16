@@ -6,10 +6,12 @@ modifying server state.__
 <small>_* with minimal boilerplate code_</small>
 
 
+
 ---
 
 - [The Issue](#the-issue)
 - [The Solution](#the-solution)
+- [Quickstart](#quickstart)
 - [How it Works (Implementation Details)](#how-it-works-implementation-details)
 - [Installation](#installation)
 - [Usage](#usage)
@@ -84,6 +86,157 @@ SvelteKit's [`fetch`](https://kit.svelte.dev/docs#loading-input-fetch) method,
 which serializes the responses of requests made during SSR and sends them along
 the rendered page so that the client does not need to do the same request again
 during [hydration](https://kit.svelte.dev/docs#ssr-and-javascript).
+
+
+
+## Quickstart
+
+Follow the [installation guide].
+
+Then add the following to your top level `__layout.svelte` and any
+`__layout.reset.svelte` files:
+
+```html
+<!-- src/__layout.html -->
+
+<script lang="ts" context="module">
+    import { loadWithStores } from 'svelte-kit-isolated-stores'
+
+    export const load = loadWithStores()
+</script>
+
+<slot />
+```
+
+To learn how to use a custom `load` function and how to use stores within it,
+have a look at [`loadWithStores()`](#loadwithstores).
+
+Define stores using [`defineWritable()`](#definewritable),
+[`defineReadable()](#definereadable) and [`defineDerived()](#definederived).
+They work almost exactly like their svelte counterparts but the initial value is
+provided through a function. Custom stores can be defined with
+[`defineStore()`](#definestore):
+
+```typescript
+// src/lib/stores.ts
+
+import { defineStore, defineWritable, defineReadable, defineDerived } from 'svelte-kit-isolated-stores'
+import { writable } from 'svelte/store'
+
+export const count = defineWritable(() => 0)
+
+export const double = defineDerived(count, $count => $count * 2)
+
+export const time = defineReadable(
+    // The initial value creator
+    () => new Date(),
+    // The start function called when the first subscriber subscribes
+    (set) => {
+        set(new Date())
+        const interval = setInterval(() => {
+            set(new Date())
+        }, 1000)
+
+        // Return the stop function called when the last subscriber unsubscribes
+        return () => {
+            clearInterval(interval)
+        }
+    },
+)
+
+export const user = defineStore(({ fetch }) => {
+    const { subscribe, set, update } = writable()
+
+    async function loadUser(uid: string) {
+        const data = await (await fetch(`/api/user/${uid}`)).json()
+        set(data)
+    }
+
+    return {
+        subscribe,
+        set,
+        update,
+
+        loadUser,
+    }
+})
+```
+
+On your pages, you can use the stores in the `load` function using the
+`loadWithStores()` function. In the template, use the store as you are used to
+from Svelte.
+
+```html
+<!-- src/routes/users/[userUid].svelte -->
+
+<script lang="ts" context="module">
+    import { loadWithStores } from 'svelte-kit-isolated-stores'
+    import { user } from '$lib/stores'
+
+    export const load = loadWithStores({ user }, async ({ user }, { params }) => {
+        await user.loadUser(params['userUid'])
+
+        return {}
+    })
+</script>
+
+<script lang="ts">
+    import { count, double, time } from '$lib/stores'
+
+    function increment() {
+        count.update((n) => n + 1)
+    }
+
+    function decrement() {
+        count.update((n) => n - 1)
+    }
+
+    $: square = $count * $count
+
+    $count = 10
+</script>
+
+<div>
+    The current date and time is {$time.toLocaleString()}
+</div>
+
+<div>
+    <button on:click={decrement}>➖</button>
+    {$count}
+    <button on:click={increment}>➕</button>
+</div>
+
+<div>
+    <div>Doubled: {$double}</div>
+    <div>Squared: {square}</div>
+</div>
+
+<div>
+    Loaded User:
+    <pre><code>{JSON.stringify($user)}</code></pre>
+</div>
+
+```
+
+To try the above example, create the file `src/routes/api/user/[userUid].ts` and paste
+the following:
+
+```typescript
+import type { RequestHandler } from '@sveltejs/kit'
+
+export const get: RequestHandler = ({ params }) => {
+    const userUid = params['userUid']
+
+    return {
+        body: {
+            uid: userUid,
+            name: 'M1000',
+            firstName: 'Moritz',
+            lastName: 'Zimmermann',
+        },
+    }
+}
+```
 
 
 
@@ -414,7 +567,7 @@ initialization:
 <script language="ts">
     import { counter } from '$lib/stores/counter'
 
-    // Use auto-subscribe syntax
+    // Use auto-subscription syntax
     $counter = 10
 </script>
 
