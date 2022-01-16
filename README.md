@@ -47,7 +47,8 @@ server side rendered HTML:
 - Static pages need JS to be displayed even though they would not have to
 
 [SvelteKit](https://kit.svelte.dev/) solves these (and more) using Server Side
-Rendering (SSR). But it comes with it's own caveats:
+Rendering ([SSR](https://kit.svelte.dev/docs#appendix-ssr)). But it comes with
+it's own caveats:
 
 If you create a [store](https://svelte.dev/tutorial/writable-stores) in a module
 (i.e. exported from a `.ts` or `.js` file) or defined globally inside a `<script
@@ -64,7 +65,7 @@ state! This means, that for **all upcoming requests**, the value of the store
 **will be changed**. In the best case, this results in "flickering", when
 reloading the page, where the SSR version of the page has old data which is
 shortly displayed until the
-[hydration](https://kit.svelte.dev/docs#ssr-and-javascript) replaces it with the
+[hydration](https://kit.svelte.dev/docs#appendix-hydration) replaces it with the
 updated value.
 
 **🔥 In the worst case, it leaks private information of one user to other users!
@@ -87,7 +88,7 @@ As a positive side effect, it enables
 SvelteKit's [`fetch`](https://kit.svelte.dev/docs#loading-input-fetch) method,
 which serializes the responses of requests made during SSR and sends them along
 the rendered page so that the client does not need to do the same request again
-during [hydration](https://kit.svelte.dev/docs#ssr-and-javascript).
+during [hydration](https://kit.svelte.dev/docs#appendix-hydration).
 
 
 
@@ -864,8 +865,9 @@ A positive side effect of the store isolation is, that you can use SvelteKit's
 
 SvelteKit's `fetch` wrapper saves the results of requests that are executed
 during SSR. To speed things up, SvelteKit then serializes the results and sends
-them along with the generated page to the browser. During hydration, the result
-is re-used so the browser does not have to fetch the same data again. After
+them along with the generated page to the browser. During
+[hydration](https://kit.svelte.dev/docs#appendix-hydration), the result is
+re-used so the browser does not have to fetch the same data again. After
 hydration, it works just like the normal `fetch` function.
 
 Another advantage of using SvelteKit's `fetch` is, that you can use relative
