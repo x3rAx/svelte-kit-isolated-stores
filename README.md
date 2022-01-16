@@ -9,19 +9,19 @@ modifying server state.__
 
 ---
 
-- [The Issue](#the-issue)
-- [The Solution](#the-solution)
-- [Quickstart](#quickstart)
-- [How it Works (Implementation Details)](#how-it-works-implementation-details)
-- [Installation](#installation)
-- [Usage](#usage)
-  - [Defining Stores](#defining-stores)
+- [🔥 The Issue](#-the-issue)
+- [💡 The Solution](#-the-solution)
+- [🚀 Quickstart](#-quickstart)
+- [⚙️ How it Works (Implementation Details)](#️-how-it-works-implementation-details)
+- [💻 Installation](#-installation)
+- [📖 Usage](#-usage)
+  - [🏪 Defining Stores](#-defining-stores)
     - [`defineStore()`](#definestore)
     - [`defineWritable()`](#definewritable)
     - [`defineReadable()`](#definereadable)
     - [`defineDerived()`](#definederived)
-  - [Extra Context for Stores (or: Be careful with Closures)](#extra-context-for-stores-or-be-careful-with-closures)
-  - [Using Stores](#using-stores)
+  - [🚩 Extra Context for Stores (or: Be careful with Closures)](#-extra-context-for-stores-or-be-careful-with-closures)
+  - [🛒 Using Stores](#-using-stores)
     - [During Component Initialization](#during-component-initialization)
     - [In the template](#in-the-template)
     - [During `load`ing](#during-loading)
@@ -29,13 +29,13 @@ modifying server state.__
     - [Outside Component Initializion and outside `load()`](#outside-component-initializion-and-outside-load)
       - [In the Browser](#in-the-browser)
       - [On the Server](#on-the-server)
-- [License](#license)
+- [📄 License](#-license)
 
 ---
 
 
 
-## The Issue
+## 🔥 The Issue
 
 [Svelte](https://svelte.dev/) is great. But even though it is very fast to
 render a page *in the browser* with Svelte, it has some drawbacks compared to
@@ -70,7 +70,7 @@ updated value.
 
 
 
-## The Solution
+## 💡 The Solution
 
 SvelteKit has a concept called the
 [session](https://kit.svelte.dev/docs#loading-input-session). It is a
@@ -89,7 +89,7 @@ during [hydration](https://kit.svelte.dev/docs#ssr-and-javascript).
 
 
 
-## Quickstart
+## 🚀 Quickstart
 
 Follow the [installation guide].
 
@@ -240,7 +240,7 @@ export const get: RequestHandler = ({ params }) => {
 
 
 
-## How it Works (Implementation Details)
+## ⚙️ How it Works (Implementation Details)
 
 Every store defined with `DefineStore` or one of the helper functions, is
 wrapped in a
@@ -267,7 +267,7 @@ module is loaded, which means we can pass in `fetch` from the `load` function).
 
 
 
-## Installation
+## 💻 Installation
 
 ```bash
 npm install -D svelte-kit-isolated-stores
@@ -300,7 +300,7 @@ export default config
 
 
 
-## Usage
+## 📖 Usage
 
 For the most part, the stores defined with `DefineStore` (or one of the helper
 methods) can be used just as you are used to from Svelte. Depending on what you
@@ -308,7 +308,7 @@ want to do, there is minimal to no boilerplate necessary.
 
 
 
-### Defining Stores
+### 🏪 Defining Stores
 
 
 
@@ -499,7 +499,7 @@ export const diagonal = defineDerived(
 
 
 
-### Extra Context for Stores (or: Be careful with Closures)
+### 🚩 Extra Context for Stores (or: Be careful with Closures)
 
 [Closures](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Closures) is
 the concept of bundling togehter a function with it's surrounding state or
@@ -554,7 +554,7 @@ export const elapsed = defineStore(() => {
 
 
 
-### Using Stores
+### 🛒 Using Stores
 
 
 
@@ -853,6 +853,6 @@ garbage collected on the server after the request is done.
 
 
 
-## License
+## 📄 License
 
 [MIT](LICENSE)
