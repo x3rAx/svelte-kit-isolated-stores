@@ -29,6 +29,7 @@ modifying server state.__
     - [Outside Component Initializion and outside `load()`](#outside-component-initializion-and-outside-load)
       - [In the Browser](#in-the-browser)
       - [On the Server](#on-the-server)
+  - [☎️ `fetch` in Stores](#️-fetch-in-stores)
 - [📄 License](#-license)
 
 ---
@@ -846,10 +847,51 @@ initialization and use it later:
 </script>
 ```
 
-This last version is only necessary if you must call a function of the store
-that has side effects like calling an API. If you just want to reset the store
-value like in the example, you can just skip this on the server, as the store is
-garbage collected on the server after the request is done.
+
+
+### ☎️ `fetch` in Stores
+
+A side effect of the store isolation is, that you can use SvelteKit's `fetch`
+inside your defined stores.
+
+SvelteKit's `fetch` wrapper saves the results of requests that are executed
+during SSR. To speed things up, SvelteKit then serializes the results and sends
+them along with the generated page to the browser. During hydration, the result
+is re-used so the browser does not have to fetch the same data again. After
+hydration, it works just like the normal `fetch` function.
+
+Another advantage of using SvelteKit's `fetch` is, that you can use relative
+URLs on the server side (i.e. you can use just the path to the API endpoint,
+without the `https://yourdomain.tld` part).
+
+When defining a custom store, you can access this `fatch` wrapper through the
+function arguments:
+
+```typescript
+import { defineStore } from 'svelte-kit-isolated-stores'
+import { writable } from 'svelte/store'
+
+// Get fetch by destructuring the function argument
+//       `-------------------------vvvvv
+export const user = defineStore(({ fetch }) => {
+    const { subscribe, set, update } = writable()
+
+    async function loadUser(uid: string) {
+        // Use `fetch` -----------vvvvv
+        const data = await (await fetch(`/api/user/${uid}`)).json()
+        set(data)
+    }
+
+    return {
+        subscribe,
+        set,
+        update,
+
+        // Export the `loadUser` function
+        loadUser,
+    }
+})
+```
 
 
 
