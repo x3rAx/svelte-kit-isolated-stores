@@ -11,9 +11,9 @@ modifying server state.__
 
 - [🔥 The Issue](#-the-issue)
 - [💡 The Solution](#-the-solution)
+- [💻 Installation](#-installation)
 - [🚀 Quickstart](#-quickstart)
 - [⚙️ How it Works (Implementation Details)](#️-how-it-works-implementation-details)
-- [💻 Installation](#-installation)
 - [📖 Usage](#-usage)
   - [🏪 Defining Stores](#-defining-stores)
     - [`defineStore()`](#definestore)
@@ -87,6 +87,39 @@ SvelteKit's [`fetch`](https://kit.svelte.dev/docs#loading-input-fetch) method,
 which serializes the responses of requests made during SSR and sends them along
 the rendered page so that the client does not need to do the same request again
 during [hydration](https://kit.svelte.dev/docs#ssr-and-javascript).
+
+
+
+## 💻 Installation
+
+```bash
+npm install -D svelte-kit-isolated-stores
+```
+
+Because this package relies on SvelteKit's generated code, you have to prevent
+Vite from building it in advance:
+
+```javascript
+// svelte.config.js
+
+/** @type {import('@sveltejs/kit').Config} */
+const config = {
+    // ...
+    kit: {
+        // ...
+        vite: {
+            optimizeDeps: {
+                exclude: ["svelte-kit-isolated-stores"],    // <-- Add this line
+            },
+            ssr: {
+                noExternal: ["svelte-kit-isolated-stores"], // <-- Add this line
+            },
+        },
+    },
+}
+
+export default config
+```
 
 
 
@@ -219,8 +252,8 @@ from Svelte.
 
 ```
 
-To try the above example, create the file `src/routes/api/user/[userUid].ts` and paste
-the following:
+To try the above example, create the file `src/routes/api/user/[userUid].ts` and
+paste the following:
 
 ```typescript
 import type { RequestHandler } from '@sveltejs/kit'
@@ -265,39 +298,6 @@ session object. It would be possible to just return the store instead of the
 use SvelteKit's `fetch` function in custom store functions (this is because with
 the `Proxy`, the store is created lazily when needed and not when the store
 module is loaded, which means we can pass in `fetch` from the `load` function).
-
-
-
-## 💻 Installation
-
-```bash
-npm install -D svelte-kit-isolated-stores
-```
-
-Because this package relies on SvelteKit's generated code, you have to prevent
-Vite from building it in advance:
-
-```javascript
-// svelte.config.js
-
-/** @type {import('@sveltejs/kit').Config} */
-const config = {
-    // ...
-    kit: {
-        // ...
-        vite: {
-            optimizeDeps: {
-                exclude: ["svelte-kit-isolated-stores"],    // <-- Add this line
-            },
-            ssr: {
-                noExternal: ["svelte-kit-isolated-stores"], // <-- Add this line
-            },
-        },
-    },
-}
-
-export default config
-```
 
 
 
