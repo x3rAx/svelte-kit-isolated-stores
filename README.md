@@ -92,7 +92,7 @@ during [hydration](https://kit.svelte.dev/docs#ssr-and-javascript).
 
 ## 🚀 Quickstart
 
-Follow the [installation guide].
+Follow the [installation guide](#-installation).
 
 Then add the following to your top level `__layout.svelte` and any
 `__layout.reset.svelte` files:
