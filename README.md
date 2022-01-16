@@ -13,14 +13,14 @@ modifying server state.__
 - [💡 The Solution](#-the-solution)
 - [💻 Installation](#-installation)
 - [🚀 Quickstart](#-quickstart)
-- [⚙️ How it Works (Implementation Details)](#️-how-it-works-implementation-details)
-- [📖 Usage](#-usage)
+- [⚙️ How does it Work (Implementation Details)](#️-how-does-it-work-implementation-details)
+- [📖 Documentation](#-documentation)
   - [🏪 Defining Stores](#-defining-stores)
     - [`defineStore()`](#definestore)
     - [`defineWritable()`](#definewritable)
     - [`defineReadable()`](#definereadable)
     - [`defineDerived()`](#definederived)
-  - [🚩 Extra Context for Stores (or: Be careful with Closures)](#-extra-context-for-stores-or-be-careful-with-closures)
+  - [🚩 Extra Context for Stores (or: "Be careful with Closures")](#-extra-context-for-stores-or-be-careful-with-closures)
   - [🛒 Using Stores](#-using-stores)
     - [During Component Initialization](#during-component-initialization)
     - [In the template](#in-the-template)
@@ -49,10 +49,10 @@ server side rendered HTML:
 [SvelteKit](https://kit.svelte.dev/) solves these (and more) using Server Side
 Rendering (SSR). But it comes with it's own caveats:
 
-If you define a [store](https://svelte.dev/tutorial/writable-stores) in a module
+If you create a [store](https://svelte.dev/tutorial/writable-stores) in a module
 (i.e. exported from a `.ts` or `.js` file) or defined globally inside a `<script
-context="module">` tag, this store will only be created when the server loads
-the module for the first time
+context="module">` tag, this store will only be created once on the server, when
+the server loads the module for the first time
 
 If your component uses such a store during
 [loading](https://kit.svelte.dev/docs#loading) or during component
@@ -67,7 +67,8 @@ shortly displayed until the
 [hydration](https://kit.svelte.dev/docs#ssr-and-javascript) replaces it with the
 updated value.
 
-**In the worst case, it leaks private information of one user to other users!**
+**🔥 In the worst case, it leaks private information of one user to other users!
+🔥**
 
 
 
@@ -97,7 +98,8 @@ npm install -D svelte-kit-isolated-stores
 ```
 
 Because this package relies on SvelteKit's generated code, you have to prevent
-Vite from building it in advance:
+Vite from building it in advance. To do that, add the following to your
+`svelte.config.js`:
 
 ```javascript
 // svelte.config.js
@@ -125,13 +127,11 @@ export default config
 
 ## 🚀 Quickstart
 
-Follow the [installation guide](#-installation).
-
-Then add the following to your top level `__layout.svelte` and any
-`__layout.reset.svelte` files:
+Follow the [installation guide](#-installation). Then add the following to your
+top level `__layout.svelte` and any `__layout.reset.svelte` files:
 
 ```html
-<!-- src/__layout.html -->
+<!-- `__layout.svelte` and any `__layout.reset.svelte` -->
 
 <script lang="ts" context="module">
     import { loadWithStores } from 'svelte-kit-isolated-stores'
@@ -146,9 +146,10 @@ To learn how to use a custom `load` function and how to use stores within it,
 have a look at [`loadWithStores()`](#loadwithstores).
 
 Define stores using [`defineWritable()`](#definewritable),
-[`defineReadable()](#definereadable) and [`defineDerived()](#definederived).
+[`defineReadable()`](#definereadable) and [`defineDerived()`](#definederived).
 They work almost exactly like their svelte counterparts but the initial value is
-provided through a function. Custom stores can be defined with
+provided through a function.
+[Custom stores](https://svelte.dev/tutorial/custom-stores) can be defined with
 [`defineStore()`](#definestore):
 
 ```typescript
@@ -178,10 +179,13 @@ export const time = defineReadable(
     },
 )
 
+// Get SvelteKit's `fetch` by destructuring the function argument
+//       `-------------------------vvvvv
 export const user = defineStore(({ fetch }) => {
     const { subscribe, set, update } = writable()
 
     async function loadUser(uid: string) {
+        // Use `fetch` -----------vvvvv
         const data = await (await fetch(`/api/user/${uid}`)).json()
         set(data)
     }
@@ -215,7 +219,11 @@ from Svelte.
 </script>
 
 <script lang="ts">
-    import { count, double, time } from '$lib/stores'
+    import { count, double as useDouble, time } from './_stores'
+
+    // Get the real store instance.
+    // (Not necessary for this example. See documentation to see when it is useful.)
+    const double = useDouble()
 
     function increment() {
         count.update((n) => n + 1)
@@ -252,8 +260,8 @@ from Svelte.
 
 ```
 
-To try the above example, create the file `src/routes/api/user/[userUid].ts` and
-paste the following:
+To try the above example, you may also want to create the used API endpoint at
+`src/routes/api/user/[userUid].ts` and paste the following:
 
 ```typescript
 import type { RequestHandler } from '@sveltejs/kit'
@@ -274,38 +282,34 @@ export const get: RequestHandler = ({ params }) => {
 
 
 
-## ⚙️ How it Works (Implementation Details)
+## ⚙️ How does it Work (Implementation Details)
 
-Every store defined with `DefineStore` or one of the helper functions, is
+Every store defined with `defineStore` or one of the helper functions, is
 wrapped in a
-[`Proxy`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy)
+[JS `Proxy`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy)
 and when a property of the store (eg. the `subscribe` or `set` function) is
-accessed, the `Proxy` returns the property of the store that belongs to the
-current session / the current request.
+accessed, the `Proxy` looks up the store for the current session and returns the
+property of that store.
 
 If the store does not exist for the current session yet, it is created and saved
 to a
 [`WeakMap`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/WeakMap)
 so the store can be retrieved if it is used again during the same request.
 
-The `WeakMap` is used to map the *session object* to a `Map` of stores. Doing
-so makes sure, that the garbage collector can clean away stores of sessions that
-do not exist anymore, after a request is done.
+The `WeakMap` is used to map from the *session object* to a `Map` of stores.
+Doing so makes sure, that the garbage collector can clean away stores of
+sessions that do not exist anymore, after a request is done.
 
 On the client side, it works the same way but of course there is always only one
 session object. It would be possible to just return the store instead of the
 `Proxy` on the client, although this would prevent the aforementioned ability to
-use SvelteKit's `fetch` function in custom store functions (this is because with
+use SvelteKit's `fetch` function in custom store functions. This is because with
 the `Proxy`, the store is created lazily when needed and not when the store
-module is loaded, which means we can pass in `fetch` from the `load` function).
+module is loaded, which means we can pass in `fetch` from the `load` function.
 
 
 
-## 📖 Usage
-
-For the most part, the stores defined with `DefineStore` (or one of the helper
-methods) can be used just as you are used to from Svelte. Depending on what you
-want to do, there is minimal to no boilerplate necessary.
+## 📖 Documentation
 
 
 
@@ -318,15 +322,15 @@ want to do, there is minimal to no boilerplate necessary.
 This package provides a `defineStore()` method that takes a function, that
 creates a [custom store](https://svelte.dev/tutorial/custom-stores).
 
-A store is defined in Svelte as an object that has at least a `subscribe()`
+In Svelte, a store is defined as an object that has at least a `subscribe()`
 method which, when executed, returns an method to unsubscribe.
 
 It can then also have other properties or methods. Common methods are `set()`
 and `update()` which are used to set and update the value of the store.
 
-But you can also include other methods. In the example below, the methods
-`increment()`, `decrement()` and `reset()` are also added to the store object
-to make it more easy to use the `counter`.
+You can also include custom methods. In the example below, the methods
+`increment()`, `decrement()` and `reset()` are also added to the store object to
+make it more easy to use the `counter`.
 
 ```typescript
 // counter.ts
@@ -464,15 +468,15 @@ dependent stores to `defineDerived()`. The first argument of the callback
 function is then an object of store values where each key of the stores object
 is prefixed with a `$`.
 
-This feature is added to increadse DX (developer experience), because using
+This feature is added to increase DX (developer experience), because by using
 objects (together with TypeScript), the intellisense can help with
 destructuring. It can can also help to reduce bugs, as swapping the positions of
 the stores in the input object does not silently change the order of the store
 values (as they would in the array example above).
 
-> However, keep in mind that this adds a layer around the original `derived()`
-> implementation and, for *very* frequently changing stores, this *might* impact
-> performance.
+> However, keep in mind that this adds a layer on top of the original
+> `derived()` implementation and, for *very* frequently changing stores, this
+> *might* impact performance.
 
 ```typescript
 // rectangle.ts
@@ -500,7 +504,7 @@ export const diagonal = defineDerived(
 
 
 
-### 🚩 Extra Context for Stores (or: Be careful with Closures)
+### 🚩 Extra Context for Stores (or: "Be careful with Closures")
 
 [Closures](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Closures) is
 the concept of bundling togehter a function with it's surrounding state or
@@ -520,8 +524,11 @@ On the server however, this would not be re-evaluated on every request and
 therefore would contain the date of the first request (or more precise the date
 the module has first been loaded on the server).
 
+**🔥 In the worst case, this can leak private information of one user to other
+users! 🔥**
+
 To achieve the same behaviour as in the Svelte tutorial, you can use
-`defineStore()` and return a derived store instead of a custom object:
+`defineStore()` and return a derived store instead of a custom store object:
 
 ```typescript
 // time.ts
@@ -544,8 +551,9 @@ export const elapsed = defineStore(() => {
     const start = new Date()
 
     // Instead of returning an object with a `subscribe()` method, you can just
-    // return a store. It is safe to use sveltes `derived()` here, as it will
-    // be re-created when the store defined by `defineStore()` is recreated.
+    // return a plain Svelte store. It is safe to use sveltes `derived()` here,
+    // as it will be re-created when the store defined by `defineStore()` is
+    // recreated.
     return derived(
         time,
         ($time) => Math.round(($time.getTime() - start.getTime()) / 1000),
@@ -619,8 +627,8 @@ access to the current session object through `$app/stores`. Therefore, we must
 pass the `session` object of the input argument of the load function to the
 isolation logic.
 
-We do that by **calling** the store as if it was a function and we pass in the
-`input` argument of the `load` function:
+We **could** do that by **calling** the store as if it was a function and we
+pass in the `input` argument of the `load` function:
 
 ```html
 <script lang="ts" context="module">
@@ -650,8 +658,8 @@ convenience function:
 
 ##### `loadWithStores()`
 
-This function is used to wrap the actual `load` function. It can be used used in
-a variety of ways. But all of them include exporting the result as `load` in the
+This function is used to wrap the actual `load` function. It can be used in a
+variety of ways. But all of them include exporting the result as `load` in the
 `module` context of a layout of page component.
 
 1. You can just call it without arguments. This makes sure that the stores get
@@ -675,8 +683,8 @@ a variety of ways. But all of them include exporting the result as `load` in the
     <slot />
     ```
 
-    This will export a load function that effectively returns `{}` to prevent a
-    `404` error.
+    Calling without arguments will export a load function that effectively
+    returns `{}` to prevent a `404` error.
 
 2. You can also pass in a custom load function.
 
@@ -695,10 +703,10 @@ a variety of ways. But all of them include exporting the result as `load` in the
     ```
 
 3. You can pass in an object where each value is an isolated store as the first
-    argument and a custom `load` function as second argument. This custom load
-    function takes as first argument an object of real stores and as second
-    argument the `LoadInput` object that a normal `load` function would take as
-    the first argument.
+    argument and as the second argument, a custom `load` function. This custom
+    load function is provided with two arguments. The first is an object of
+    actual (not isolated) stores, the second is the `LoadInput` object that a
+    normal `load` function receive through the first argument.
 
     ```html
     <script lang="ts" context="module">
@@ -727,9 +735,9 @@ a variety of ways. But all of them include exporting the result as `load` in the
 
 #### Outside Component Initializion and outside `load()`
 
-The isolation mechanism needs to know what is the current session. Outside
+The isolation mechanism needs to know what the current session is. Outside
 component initialization and outside `load()` there is no reliable way to access
-the `session` object in general.
+SvelteKit's `session` object in general.
 
 
 
@@ -758,7 +766,7 @@ Consider the following code:
 <button on:click="{() => incrementBy(10)}">+10</button>
 ```
 
-The `incrementBy()` method executed *after* component initialization. So
+The `incrementBy()` method is executed *after* component initialization. So
 when it accesses the `update` property of `counter`, the isolation wrapper has
 no idea what the current session is. Normally this would fail. But there is a
 fix:
@@ -773,12 +781,12 @@ it to some value or you subscribe to it) then the above example would work. But
 **you do not want to rely on someon else having used a store before you**.
 
 Therefore, to ensure the isolation mechanism *always* has access to the
-`session`, make sure to export a call to `loadWithStores()` (with or without
-arguments) as `load` in the top level `__layout.svelte` and any
+`session` (at least in the browser), make sure to use the `loadWithStores()`
+function (with or without arguments) in the top level `__layout.svelte` and any
 `__layout.reset.svelte` files:
 
 ```html
-<!-- `__layout.svelte` or any `__layout.reset.svelte` -->
+<!-- `__layout.svelte` and any `__layout.reset.svelte` -->
 <script lang="ts" context="module">
     import { loadWithStores } from 'svelte-kit-isolated-stores'
 
@@ -794,8 +802,8 @@ Luckily most code that runs outside component initialization and outside the
 `load` function is only ever run in the browser.
 
 For example any event handlers do usually not run on the server and you should
-avoid async code in your component initialization during SSR anyway, as
-it will not effect the rendered page HTML.
+avoid async code in your component initialization (outside the `load` function)
+during SSR anyway, as it will not effect the rendered page HTML.
 
 Also Svelte's `onMount()` function is only run in the browser.
 
@@ -851,8 +859,8 @@ initialization and use it later:
 
 ### ☎️ `fetch` in Stores
 
-A side effect of the store isolation is, that you can use SvelteKit's `fetch`
-inside your defined stores.
+A positive side effect of the store isolation is, that you can use SvelteKit's
+`fetch` inside your defined stores.
 
 SvelteKit's `fetch` wrapper saves the results of requests that are executed
 during SSR. To speed things up, SvelteKit then serializes the results and sends
@@ -871,7 +879,7 @@ function arguments:
 import { defineStore } from 'svelte-kit-isolated-stores'
 import { writable } from 'svelte/store'
 
-// Get fetch by destructuring the function argument
+// Get SvelteKit's `fetch` by destructuring the function argument
 //       `-------------------------vvvvv
 export const user = defineStore(({ fetch }) => {
     const { subscribe, set, update } = writable()
