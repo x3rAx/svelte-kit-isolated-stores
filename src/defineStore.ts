@@ -16,7 +16,7 @@ export function isIsolatedStore(store: any) {
 export function defineStore<T extends Readable<unknown>>(
     fn: (storeInput: StoreInput) => T,
 ): IsolatedStore<T> {
-    function getStore(input?: LoadInput): T {
+    function getStore(input?: LoadInput): T & ObjectConstructor {
         // Get stores for session
         const { sessionData } = useSession(input)
         const { stores } = sessionData
@@ -26,12 +26,14 @@ export function defineStore<T extends Readable<unknown>>(
             const storeInput = createStoreInput(sessionData)
             stores.set(fn, fn(storeInput))
         }
-        return stores.get(fn) as T
+        return stores.get(fn) as T & ObjectConstructor
     }
 
     // NOTE: We do not access this dymmy object but we make it a function so
     //       the proxy is callable
-    const isolatedStore = (_input: LoadInput) => {}
+    function isolatedStore(_input: LoadInput) {
+        return {}
+    }
 
     return new Proxy(isolatedStore, {
         // The main part: Redirect property getter to session store
@@ -50,7 +52,7 @@ export function defineStore<T extends Readable<unknown>>(
         // Redirect everything else to the session store
 
         construct(_target, argArray, newTarget) {
-            return Reflect.construct(getStore().constructor, argArray, newTarget)
+            return Reflect.construct(getStore(), argArray, newTarget)
         },
         defineProperty(_target, prop, attributes) {
             return Reflect.defineProperty(getStore(), prop, attributes)
