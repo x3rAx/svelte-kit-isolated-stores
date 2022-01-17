@@ -1,5 +1,5 @@
 module.exports = {
-    modulePathIgnorePatterns: ["<rootDir>/dist/"],
+    modulePathIgnorePatterns: ['<rootDir>/dist/'],
     transform: {
         '^.+\\.ts$': 'ts-jest',
         '^.+\\.js$': 'ts-jest',
@@ -7,4 +7,5 @@ module.exports = {
     moduleFileExtensions: ['js', 'ts'],
     setupFilesAfterEnv: ['<rootDir>/jest-setup.ts'],
     resetMocks: true,
+    collectCoverageFrom: ['src/**/*.{ts,js}']
 }
