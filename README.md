@@ -5,6 +5,12 @@ modifying server state.__
 
 <small>_* with minimal boilerplate code_</small>
 
+[![NPM version](https://img.shields.io/npm/v/svelte-kit-isolated-stores?logo=npm)](https://www.npmjs.com/package/svelte-kit-isolated-stores)
+[![NPM license](https://img.shields.io/npm/l/svelte-kit-isolated-stores)](https://gitlab.com/x3ro/svelte-kit-isolated-stores/-/blob/main/LICENSE)
+[![npm type definitions](https://img.shields.io/npm/types/svelte-kit-isolated-stores?logo=typescript)](https://www.typescriptlang.org/)
+[![Created for SvelteKit](https://img.shields.io/badge/created%20for-SvelteKit-%23ff3e00?logo=svelte)](https://kit.svelte.dev/)
+[![GitLab](https://img.shields.io/static/v1?label=GitLab&message=x3ro%2Fsvelte-kit-isolated-stores&color=%23f96424&logo=gitlab)](https://gitlab.com/x3ro/svelte-kit-isolated-stores)
+[![Emoji-Log](https://img.shields.io/badge/%F0%9F%9A%80-Emoji--Log-%238679A2)](https://github.com/ahmadawais/Emoji-Log/)
 
 
 ---
