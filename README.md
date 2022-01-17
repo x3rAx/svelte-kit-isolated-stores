@@ -36,6 +36,7 @@ modifying server state.__
       - [In the Browser](#in-the-browser)
       - [On the Server](#on-the-server)
   - [☎️ `fetch` in Stores](#️-fetch-in-stores)
+- [👤 Author](#-author)
 - [📄 License](#-license)
 
 ---
@@ -912,6 +913,18 @@ export const user = defineStore(({ fetch }) => {
     }
 })
 ```
+
+
+
+## 👤 Author
+
+<img src="https://avatars.githubusercontent.com/u/2268851" style="width:30px;
+border-radius:30px; margin-bottom:-8px; margin-right:5px" />
+Björn Richter (^x3ro)
+
+- Twitter: [@x3rAx](https://twitter.com/x3rAx)
+- GitLab: [@x3ro](https://gitlab.com/x3ro)
+- GitHub: [@x3rAx](https://github.com/x3rAx/)
 
 
 
