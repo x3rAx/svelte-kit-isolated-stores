@@ -1,16 +1,23 @@
+import svelteKitEnv from '$app/env'
+
 jest.mock(
     '$app/stores',
-    () => {
-        return {}
-    },
+    () => ({
+        session: {
+            subscribe: jest.fn(),
+        },
+    }),
     { virtual: true },
 )
 
 jest.mock(
     '$app/env',
-    () => {
-        return {}
-    },
+    () => ({
+        browser: false,
+        __setBrowser(val) {
+            this.browser = val
+        },
+    }),
     { virtual: true },
 )
 

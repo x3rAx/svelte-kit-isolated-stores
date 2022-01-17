@@ -6,4 +6,5 @@ module.exports = {
     },
     moduleFileExtensions: ['js', 'ts'],
     setupFilesAfterEnv: ['<rootDir>/jest-setup.ts'],
+    resetMocks: true,
 }
