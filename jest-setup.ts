@@ -1,5 +1,3 @@
-import svelteKitEnv from '$app/env'
-
 jest.mock(
     '$app/stores',
     () => ({
@@ -14,9 +12,6 @@ jest.mock(
     '$app/env',
     () => ({
         browser: false,
-        __setBrowser(val) {
-            this.browser = val
-        },
     }),
     { virtual: true },
 )

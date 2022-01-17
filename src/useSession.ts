@@ -2,7 +2,7 @@ import { session as sessionStore } from '$app/stores'
 import { get as $ } from 'svelte/store'
 import type { LoadInput } from '@sveltejs/kit'
 import type { Writable } from 'svelte/store'
-import { browser } from '$app/env'
+import { browser, mode } from '$app/env'
 import { LOAD_WITH_STORES_HINT } from './loadWithStoresHint'
 
 export type Session = Writable<unknown>
@@ -26,6 +26,14 @@ const browserSession = (() => {
         },
     }
 })()
+
+export const __USE_ONLY_IN_TESTING__resetBrowserSession = () => {
+    if (mode !== 'TESTING') {
+        console.error("Function disabled while not in mode 'TESTING'")
+        return
+    }
+    browserSession.set(undefined)
+}
 
 export function useSession(input?: LoadInput): { session: Session; sessionData: SessionData } {
     let session: Session = input?.session ?? browserSession.get() ?? getSessionFromSvelteKitStores()
