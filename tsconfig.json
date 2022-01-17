@@ -22,10 +22,10 @@
         "baseUrl": ".",
         "allowJs": true,
         "checkJs": true,
-        "paths": { },
+        "paths": {},
 
         "declaration": true,
         "outDir": "./dist"
     },
-    "include": ["src/**/*"]
+    "include": ["src/**/*", "./jest-setup.ts"]
 }
