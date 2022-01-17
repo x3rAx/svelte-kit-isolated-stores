@@ -10,7 +10,7 @@ export type IsolatedStore<T extends Readable<unknown>> = SessionStoreFn<T> & T
 
 const IS_ISOLATED_STORE = Symbol('IS_ISOLATED_STORE')
 export function isIsolatedStore(store: any) {
-    return typeof store === 'function' && store[IS_ISOLATED_STORE]
+    return true === (typeof store === 'function' && store[IS_ISOLATED_STORE])
 }
 
 export function defineStore<T extends Readable<unknown>>(
