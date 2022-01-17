@@ -918,9 +918,9 @@ export const user = defineStore(({ fetch }) => {
 
 ## 👤 Author
 
-<img src="https://avatars.githubusercontent.com/u/2268851" style="width:30px;
-border-radius:30px; margin-bottom:-8px; margin-right:5px" />
-Björn Richter (^x3ro)
+<img src="https://i.imgur.com/4McE4JS.png" width="30"
+style="border-radius:30px; margin-bottom:-8px; margin-right:5px" /> Björn
+Richter (^x3ro)
 
 - Twitter: [@x3rAx](https://twitter.com/x3rAx)
 - GitLab: [@x3ro](https://gitlab.com/x3ro)
