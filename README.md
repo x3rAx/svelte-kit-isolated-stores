@@ -930,4 +930,7 @@ Björn Richter (^x3ro)
 
 ## 📄 License
 
-[MIT](LICENSE)
+Copyright © 2019 Björn Richter <<git@x3ro.dev>>  
+This project is
+[MIT](https://gitlab.com/x3ro/svelte-kit-isolated-stores/-/blob/main/LICENSE)
+licensed.
