@@ -212,18 +212,22 @@ from Svelte.
     import { loadWithStores } from 'svelte-kit-isolated-stores'
     import { user } from '$lib/stores'
 
-    export const load = loadWithStores({ user }, async ({ user }, { params }) => {
-        await user.loadUser(params['userUid'])
+    export const load = loadWithStores(
+        { user },
+        async ({ user }, { params }) => {
+            await user.loadUser(params['userUid'])
 
-        return {}
-    })
+            return {}
+        }
+    )
 </script>
 
 <script lang="ts">
     import { count, double as useDouble, time } from './_stores'
 
     // Get the real store instance.
-    // (Not necessary for this example. See documentation to see when it is useful.)
+    // (Not necessary for this example. See documentation to see where it
+    // is useful.)
     const double = useDouble()
 
     function increment() {
