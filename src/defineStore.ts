@@ -35,12 +35,11 @@ export function defineStore<T extends Readable<unknown>>(
 
     return new Proxy(isolatedStore, {
         // The main part: Redirect property getter to session store
-        get(_target, prop, _receiver) {
+        get(_target, prop, receiver) {
             if (prop === IS_ISOLATED_STORE) {
                 return true
             }
-            const store = getStore()
-            return store[prop]
+            return Reflect.get(getStore(), prop, receiver)
         },
 
         // Some magic: Call the store to get the session store
