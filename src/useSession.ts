@@ -4,24 +4,38 @@ import type { LoadInput } from '@sveltejs/kit'
 import type { Writable } from 'svelte/store'
 import { browser, mode } from '$app/env'
 import { LOAD_WITH_STORES_HINT } from './loadWithStoresHint'
+import { prerendering } from '$app/env'
 
-export type Session = Writable<unknown>
+type Session = Writable<unknown>
+export type SessionKey = {} | Session
 export type SessionData = { stores: Map<unknown, unknown>; fetch: typeof fetch }
 
 // Stores per session, weakly mapped by the session object. Allows the GC to
 // remove stores of sessions that are no longer existent
-export const sessionMap = new WeakMap<Session, SessionData>()
+export const sessionMap = new WeakMap<SessionKey, SessionData>()
 
 const browserSession = (() => {
-    let _value: Session = undefined
+    let _value: SessionKey = undefined
     return {
-        set(value: Session) {
+        set(value: SessionKey) {
             if (!browser) {
                 throw new Error('Browser session cannot be set from the server')
             }
             _value = value
         },
-        get(): Session {
+        get(): SessionKey {
+            return _value
+        },
+    }
+})()
+
+const prerenderingKey = (() => {
+    let _value = {}
+    return {
+        get(): SessionKey {
+            if (!prerendering) {
+                throw new Error('Prerendering key can only be accessed during prerendering')
+            }
             return _value
         },
     }
@@ -35,27 +49,29 @@ export const __USE_ONLY_IN_TESTING__resetBrowserSession = () => {
     browserSession.set(undefined)
 }
 
-export function useSession(input?: LoadInput): { session: Session; sessionData: SessionData } {
-    let session: Session = input?.session ?? browserSession.get() ?? getSessionFromSvelteKitStores()
+export function useSession(input?: LoadInput): SessionData {
+    let key: SessionKey
+    if (prerendering) {
+        key = prerenderingKey.get()
+    } else {
+        key = ((!prerendering) ? input?.session : undefined) ?? browserSession.get() ?? getSessionFromSvelteKitStores()
+    }
 
-    if (!session) {
+    if (!key) {
         throw new Error('Failed to get session')
     }
 
     if (browser) {
-        browserSession.set(session)
+        browserSession.set(key as Session)
     }
 
-    const sessionData = getOrCreateSessionData(session, input)
+    const sessionData = getOrCreateSessionData(key, input)
     sessionData.fetch = sessionData.fetch ?? input?.fetch
 
-    return {
-        session,
-        sessionData,
-    }
+    return sessionData
 }
 
-function getOrCreateSessionData(session: Session, input?: LoadInput) {
+function getOrCreateSessionData(session: SessionKey, input?: LoadInput) {
     if (!sessionMap.has(session)) {
         sessionMap.set(session, { stores: new Map(), fetch: input?.fetch })
     }

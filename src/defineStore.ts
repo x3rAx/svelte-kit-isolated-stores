@@ -18,7 +18,7 @@ export function defineStore<T extends Readable<unknown>>(
 ): IsolatedStore<T> {
     function getStore(input?: LoadInput): T & ObjectConstructor {
         // Get stores for session
-        const { sessionData } = useSession(input)
+        const sessionData = useSession(input)
         const { stores } = sessionData
 
         // Get requested store from session stores, create if not exists
